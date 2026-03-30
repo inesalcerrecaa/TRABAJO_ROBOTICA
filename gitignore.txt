@@ -1,0 +1,29 @@
+# --- CARPETAS DE BASURA (Compilación) ---
+Debug/
+Release/
+build/
+bin/
+Settings/
+
+# --- ARCHIVOS TEMPORALES DE CUBEIDE ---
+*.o
+*.d
+*.su
+*.cyclo
+*.elf
+*.bin
+*.hex
+*.map
+*.list
+*.lck
+*.launch
+*.tmp
+
+# --- BASURA DEL MAKEFILE (Lo que te salía suelto) ---
+makefile
+objects.list
+*.mk
+
+# --- ARCHIVOS DE SISTEMA ---
+Thumbs.db
+.DS_Store
