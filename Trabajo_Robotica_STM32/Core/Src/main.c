@@ -62,8 +62,11 @@ static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_TIM5_Init(void);
-/* USER CODE BEGIN PFP */
 
+/* USER CODE BEGIN PFP */
+void Dibujar_Linea_Aleatoria(void);
+void Dibujar_Circulo_Aleatorio(void);
+void Subir_Rotulador(int y_actual);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -110,12 +113,73 @@ int main(void)
   /* USER CODE BEGIN 2 */
   //arranco los encoders por hardware (Sofia)
   Encoders_Init();
+
+  //nuestro candado de seguridad 0 libre, 1 ocupado
+  uint8_t robot_dibujando = 0;
+
+  //mensaje inicial
+  Display_LCD_Escribir(0, 0, "ROBOT LISTO");
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  //leemos botones
+	  int accion = Leer_Botones_Accion();
+	  int reset = Leer_Boton_Reset();
+
+	  //PRIORIDAD 1: BOTÓN DE RESET (Pánico / Pulsación Larga)
+	        if (reset == 1) {
+	            robot_dibujando = 0; // Rompemos el candado por si se había quedado bloqueado
+	            Subir_Rotulador(0);  // Levantamos el rotulador a tope por seguridad
+
+	            Display_LCD_Escribir(0, 0, "SISTEMA RESET   ");
+	            HAL_Delay(1500);     // Esperamos un segundo y medio
+	            Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
+	        }
+
+	        //PRIORIDAD 2: ACCIONES NORMALES
+	        else if (accion != 0) {
+
+	            // Acción 1: Girar Gripper
+	            if (accion == 1) {
+	                if (robot_dibujando == 0) {
+	                    Display_LCD_Escribir(0, 0, "GIRANDO GRIPPER ");
+
+	                    // AVISO: Aquí irá la función de girar el tambor de colores
+	                    HAL_Delay(500); // Simulamos que tarda un poco
+
+	                    Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
+	                } else {
+	                    // Si intentan girar mientras pinta, les regañamos
+	                    Display_LCD_Escribir(0, 0, "ERROR: DIBUJANDO");
+	                    HAL_Delay(1000);
+	                    // Volvemos a poner lo que estaba haciendo
+	                    Display_LCD_Escribir(0, 0, "DIBUJANDO...    ");
+	                }
+	            }
+
+	            // Acción 2: Dibujar Círculo
+	            else if (accion == 2 && robot_dibujando == 0) {
+	                robot_dibujando = 1; // CERRAMOS CANDADO
+	                Display_LCD_Escribir(0, 0, "DIBUJANDO CIRCUL");
+
+	                Dibujar_Circulo_Aleatorio(); // ¡Llamamos a tu super función!
+
+	                robot_dibujando = 0; // ABRIMOS CANDADO
+	                Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
+	            }
+
+	            // Acción 3: Dibujar Línea
+	            else if (accion == 3 && robot_dibujando == 0) {
+	                robot_dibujando = 1; // CERRAMOS CANDADO
+	                Display_LCD_Escribir(0, 0, "DIBUJANDO LINEA ");
+
+	                Dibujar_Linea_Aleatoria(); // ¡Llamamos a tu super función!
+
+	                robot_dibujando = 0; // ABRIMOS CANDADO
+	                Display_LCD_Escribir(0, 0, "ROBOT LISTO     ")
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
