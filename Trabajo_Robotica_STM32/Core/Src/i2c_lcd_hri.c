@@ -58,16 +58,18 @@ static uint8_t  btn2_is_pressed = 0;
 static uint32_t btn3_start_time = 0;
 static uint8_t  btn3_is_pressed = 0;
 
-static uint32_t start_start_time = 0;
-static uint8_t  start_is_pressed = 0;
+static uint32_t reset_start_time = 0;
+static uint8_t  reset_is_pressed = 0;
 
 #define DEBOUNCE_MS     50
+#define TIEMPO_RESET_MS 2000 //dos segundos de pulsacion larga para el reset
 
-//funcion para leer que color se ha pulsado con el antirrebote
-int Leer_Botones_color(void)
+//funcion para leer que accion se ha pedido
+//Devuelve: 1 (Girar Gripper), 2 (Círculo), 3 (Línea), 0 (Nada)
+int Leer_Botones_Accion(void)
 {
 	uint32_t ahora = HAL_GetTick();
-	//leer boton 1 (PC2)
+	//BOTÓN 1: Girar Gripper (PC2)
 	GPIO_PinState estado_btn1 = HAL_GPIO_ReadPin(GPIOC, BTN_C1_Pin);
 	if (estado_btn1 == GPIO_PIN_SET) //asumimos que los tactiles dan 1 al tocar
 	{
@@ -80,11 +82,11 @@ int Leer_Botones_color(void)
 		if (btn1_is_pressed){
 			uint32_t duracion = ahora - btn1_start_time;
 			btn1_is_pressed = 0;
-			if (duracion >= DEBOUNCE_MS) return 1; //indica un clic valido de Color 1
+			if (duracion >= DEBOUNCE_MS) return 1; //Accion 1
 		}
 	}
 
-	//leer boton 2 (PC3)
+	//BOTÓN 2: Dibujar Círculo (PC3)
 		GPIO_PinState estado_btn2 = HAL_GPIO_ReadPin(GPIOC, BTN_C2_Pin);
 		if (estado_btn2 == GPIO_PIN_SET) //asumimos que los tactiles dan 1 al tocar
 		{
@@ -97,11 +99,11 @@ int Leer_Botones_color(void)
 			if (btn2_is_pressed){
 				uint32_t duracion = ahora - btn2_start_time;
 				btn2_is_pressed = 0;
-				if (duracion >= DEBOUNCE_MS) return 2; //indica un clic valido de Color 2
+				if (duracion >= DEBOUNCE_MS) return 2; //Accion 2
 			}
 		}
 
-	//leer boton 3 (PC4)
+	//BOTÓN 3: Dibujar Línena (PC4)
 		GPIO_PinState estado_btn3 = HAL_GPIO_ReadPin(GPIOC, BTN_C3_Pin);
 		if (estado_btn3 == GPIO_PIN_SET) //asumimos que los tactiles dan 1 al tocar
 			{
@@ -114,29 +116,30 @@ int Leer_Botones_color(void)
 				if (btn3_is_pressed){
 					uint32_t duracion = ahora - btn3_start_time;
 					btn3_is_pressed = 0;
-					if (duracion >= DEBOUNCE_MS) return 3; //indica un clic valido de Color 3
+					if (duracion >= DEBOUNCE_MS) return 3; //Accion 3
 				}
 			}
 
 	return 0; //si no hay clics validos devuelve 0
 }
 
-//funcion para leer el boton de inicio (PC5)
+//Funcion para el boton de RESET (PC5) - Requiere pulsacion larga
+//Devuelve  si se ha mantenido pulsado 2 segundos, 0 si no.
 int Leer_Boton_Start (void)
 {
 	uint32_t ahora = HAL_GetTick();
-	GPIO_PinState estado_start = HAL_GPIO_ReadPin(GPIOC, BTN_START_Pin);
+	GPIO_PinState estado_reset = HAL_GPIO_ReadPin(GPIOC, BTN_START_Pin);
 
-	if (estado_start == GPIO_PIN_SET){
-		if (!start_is_pressed){
-			start_is_pressed = 1;
-			start_start_time = ahora;
+	if (estado_reset == GPIO_PIN_SET){
+		if (!reset_is_pressed){
+			reset_is_pressed = 1;
+			reset_start_time = ahora;
 		}
 	}else {
-		if (start_is_pressed){
-			uint32_t duracion = ahora - start_start_time;
-			start_is_pressed = 0;
-			if (duracion >= DEBOUNCE_MS) return 1; //indica un clic valido de start
+		if (reset_is_pressed){
+			uint32_t duracion = ahora - reset_start_time;
+			reset_is_pressed = 0;
+			if (duracion >= TIEMPO_RESET_MS) return 1; //indica un clic valido de reset
 		}
 	}
 
