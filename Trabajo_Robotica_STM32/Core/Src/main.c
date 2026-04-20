@@ -183,6 +183,10 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	if (color_seleccionado_cambio) {
+	    float q4 = 2.094f;  // 120° en radianes = color 2
+	    IK_Actualizar_Brazo_Efectivo(q4);
+	    color_seleccionado_cambio = 0;  // reset del flag
   }
   /* USER CODE END 3 */
 }

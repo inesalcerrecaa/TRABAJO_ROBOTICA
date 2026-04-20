@@ -18,23 +18,23 @@ static float s_alpha  = 0.0f;
 
 /* IK_Update_Effective_Arm
  * Llama SOLO cuando cambia q4 (cambio de color en reposo). */
-void IK_Update_Effective_Arm(float q4_rad){
-	/* USER CODE BEGIN IK_Update_Effective_Arm */
+void IK_Actualizar_Brazo_Efectivo(float q4_rad){
+	/* USER CODE BEGIN IK_Actualizar_Brazo_Efectivo */
 	/* Primero calculamos la longitud del brazo efectivo (L2+ rotulador como un sólido rígido)*/
 	s_L_eff = sqrtf((L2*L2)+(L_xy*L_xy)+(2.0f * L2*L_xy*cosf(q4_rad)));
 	/* Ahora calculamos el ángulo de desviación geométrica alpha */
 	s_alpha = atan2f (L_xy *sinf(q4_rad), L2+L_xy*cosf(q4_rad));
 
-	/* USER CODE END IK_Update_Effective_Arm */
+	/* USER CODE END IK_Actualizar_Brazo_Efectivo */
 }
 
-/*Mover_Robot_A_Coordenada
+/*IK_Resolver_Movimiento
  * LLama en cada frame del bucle de trayectorias.
  * x_mm, y_mm = coordenadas en el PLANO XY local (base del robot).
  * z_mm = coordenada Z del punto objetivo local.
  */
 
-IK_Result_t Mover_Robot_A_Coordenada (float x_mm, float y_mm, float z_mm){
+IK_Result_t IK_Resolver_Movimiento (float x_mm, float y_mm, float z_mm){
 	/* USER CODE BEGIN Mover_Robot_A_Coordenada */
 	 IK_Result_t resultado={0.0f,0.0f,0.0f,0.0f}; /* valid=0 por defecto*/
 	 /* Segundo paso: el eje Z (tronco que va desacoplado del plano XY) */

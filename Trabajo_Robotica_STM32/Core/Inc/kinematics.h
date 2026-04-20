@@ -32,7 +32,7 @@ typedef struct {
  *         Precalcula L_eff y alpha que se reutilizan en cada frame.
  * @param  q4_rad  Ángulo actual del servo del gripper (rad)
  */
-void IK_Update_Effective_Arm(float q4_rad);
+void IK_Actualizar_Brazo_Efectivo(float q4_rad);
 
 /**
  * @brief  Cinemática Inversa. Llama en cada frame del bucle de
@@ -40,5 +40,5 @@ void IK_Update_Effective_Arm(float q4_rad);
  * @param  x_mm, y_mm, z_mm  Coordenadas objetivo en mm
  * @return IK_Result_t  Ángulos articulares + flag de validez
  */
-IK_Result_t Mover_Robot_A_Coordenada(float x_mm, float y_mm, float z_mm);
+IK_Result_t IK_Resolver_Movimiento(float x_mm, float y_mm, float z_mm);
 #endif /* INC_KINEMATICS_H_ */
