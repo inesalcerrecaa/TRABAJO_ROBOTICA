@@ -67,6 +67,12 @@ static void MX_TIM5_Init(void);
 void Dibujar_Linea_Aleatoria(void);
 void Dibujar_Circulo_Aleatorio(void);
 void Subir_Rotulador(int y_actual);
+
+//presentamos funciones externas para que el main no se asuste
+void Encoders_Init(void);
+void Display_LCD_Escribir(int fila, int col, char* texto);
+int Leer_Botones_Accion(void);
+int Leer_Boton_Reset(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -111,11 +117,11 @@ int main(void)
   MX_TIM5_Init();
 
   /* USER CODE BEGIN 2 */
-  //arranco los encoders por hardware (Sofia)
-  Encoders_Init();
-
   //nuestro candado de seguridad 0 libre, 1 ocupado
   uint8_t robot_dibujando = 0;
+
+  //arranco los encoders por hardware (Sofia)
+  Encoders_Init();
 
   //mensaje inicial
   Display_LCD_Escribir(0, 0, "ROBOT LISTO");
@@ -179,7 +185,10 @@ int main(void)
 	                Dibujar_Linea_Aleatoria(); // ¡Llamamos a tu super función!
 
 	                robot_dibujando = 0; // ABRIMOS CANDADO
-	                Display_LCD_Escribir(0, 0, "ROBOT LISTO     ")
+	                Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
+	            }
+	        }
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

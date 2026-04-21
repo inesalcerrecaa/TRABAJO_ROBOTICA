@@ -125,7 +125,7 @@ int Leer_Botones_Accion(void)
 
 //Funcion para el boton de RESET (PC5) - Requiere pulsacion larga
 //Devuelve  si se ha mantenido pulsado 2 segundos, 0 si no.
-int Leer_Boton_Start (void)
+int Leer_Boton_Reset (void)
 {
 	uint32_t ahora = HAL_GetTick();
 	GPIO_PinState estado_reset = HAL_GPIO_ReadPin(GPIOC, BTN_START_Pin);
