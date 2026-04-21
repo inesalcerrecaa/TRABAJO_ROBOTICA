@@ -22,6 +22,9 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "hri.h"
+#include "motion.h"
+#include "kinematics.h"
+#include "gripper.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -71,12 +74,13 @@ static void MX_TIM3_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_TIM5_Init(void);
 static void MX_USART2_UART_Init(void);
+
 /* USER CODE BEGIN PFP */
-void LCD_Init(void);
+/*void LCD_Init(void);
 void Display_LCD_Escribir(uint8_t fila, uint8_t col, char *texto);
 int Leer_Botones_Accion(void);
 int Leer_Boton_Reset(void);
-int Leer_Sensor_Hall(void);
+int Leer_Sensor_Hall(void);*/
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -121,7 +125,9 @@ int main(void)
   MX_TIM4_Init();
   MX_TIM5_Init();
   MX_USART2_UART_Init();
+
   /* USER CODE BEGIN 2 */
+  Encoders_Init(); //despertamos a mis encoders SOFÍA
 
   // Arrancamos el motor parado
     HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_1);
@@ -189,15 +195,17 @@ int main(void)
 
 		  // Acción 2: BOTÓN DE CÍRCULO - Mensaje de aviso
 		  else if (accion == 2) {
-			  Display_LCD_Escribir(0, 0, "MODO PINTAR OFF ");
+			  Display_LCD_Escribir(0, 0, "DIBUJANDO CIRCULO ");
 			  HAL_Delay(1000);
+			  Dibujar_Circulo_Aleatorio(); //llamamos a la funcion
 			  Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
 		  }
 
 		  // Acción 3: BOTÓN DE LÍNEA - Mensaje de aviso
 		  else if (accion == 3) {
-			  Display_LCD_Escribir(0, 0, "MODO PINTAR OFF ");
+			  Display_LCD_Escribir(0, 0, "DIBUJANDO LINEA ");
 			  HAL_Delay(1000);
+			  Dibujar_Linea_Aleatoria(); //llamamos a la funcion
 			  Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
 		  }
 	  }
