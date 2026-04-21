@@ -21,9 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "encoder_hw.h"       // INCLUYE CABECERA DE ENCODERS
-#include "i2c_lcd_hri.h"      // INCLUYE CABECERA DE PANTALLA
-#include "kinematics.h"       // INCLUYE CABECERA DE CINEMÁTICA (FALTABA ESTA ⚠️)
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -50,26 +48,29 @@ TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim5;
 
+UART_HandleTypeDef huart2;
+DMA_HandleTypeDef hdma_usart2_tx;
+
 /* USER CODE BEGIN PV */
-
-volatile uint8_t color_seleccionado_cambio = 0; // DECLARA VARIABLE DE ESTADO GLOBAL
-
+// El "punto dulce" donde el servo se queda tieso (ajústalo si ratea)
+#define GRIPPER_STOP  1500
+// Velocidad moderada para que no salga volando el crayón
+#define GRIPPER_SPEED 1650
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_TIM5_Init(void);
-
+static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
-void Dibujar_Linea_Aleatoria(void);
-void Dibujar_Circulo_Aleatorio(void);
-void Subir_Rotulador(int y_actual);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -106,80 +107,59 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_I2C1_Init();
   MX_TIM1_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM4_Init();
   MX_TIM5_Init();
-
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  //arranco los encoders por hardware (Sofia)
-  Encoders_Init();
+  // Mensaje de bienvenida pro
+  printf("\r\n--- TEST DE VELOCIDAD DEL GRIPPER ---\r\n");
+  printf("Pulsad el boton para empezar la busqueda del iman...\r\n");
 
-  //nuestro candado de seguridad 0 libre, 1 ocupado
-  uint8_t robot_dibujando = 0;
-
-  //mensaje inicial
-  Display_LCD_Escribir(0, 0, "ROBOT LISTO");
+  // Arrancamos el motor (de momento parado)
+  HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_1);
+  __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_1, GRIPPER_STOP);
   /* USER CODE END 2 */
 
   /* Infinite loop */
-  /* Infinite loop */
-    /* USER CODE BEGIN WHILE */
-    while (1)
-    {
-        int accion = Leer_Botones_Accion(); // LEE ACCIÓN DEL USUARIO
-        int reset = Leer_Boton_Reset();     // LEE BOTÓN DE EMERGENCIA
-
-        if (reset == 1) { // PRIORIDAD 1: RESET DEL SISTEMA
-            robot_dibujando = 0; // LIBERA EL CANDADO
-            Subir_Rotulador(0);  // ELEVA EJE Z
-            Display_LCD_Escribir(0, 0, "SISTEMA RESET   "); // AVISO LCD
-            HAL_Delay(1500); // ESPERA DE CORTESÍA
-            Display_LCD_Escribir(0, 0, "ROBOT LISTO     "); // ESTADO REPOSO
-        }
-        else if (accion != 0) { // PRIORIDAD 2: EJECUTA ACCIONES
-            if (accion == 1) { // ACCIÓN 1: GIRAR GRIPPER
-                if (robot_dibujando == 0) { // VERIFICA QUE NO PINTA
-                    Display_LCD_Escribir(0, 0, "GIRANDO GRIPPER "); // AVISO GIRO
-                    HAL_Delay(500); // TIEMPO DE MANIOBRA
-                    Display_LCD_Escribir(0, 0, "ROBOT LISTO     "); // VUELVE A LISTO
-                } else {
-                    Display_LCD_Escribir(0, 0, "ERROR: DIBUJANDO"); // AVISO BLOQUEO
-                    HAL_Delay(1000); // PAUSA ERROR
-                    Display_LCD_Escribir(0, 0, "DIBUJANDO...    "); // VUELVE AL ESTADO PREVIO
-                }
-            }
-            else if (accion == 2 && robot_dibujando == 0) { // ACCIÓN 2: CÍRCULO
-                robot_dibujando = 1; // CIERRA CANDADO
-                Display_LCD_Escribir(0, 0, "DIBUJANDO CIRCUL"); // AVISO DIBUJO
-                Dibujar_Circulo_Aleatorio(); // EJECUTA TRAZO
-                robot_dibujando = 0; // ABRE CANDADO
-                Display_LCD_Escribir(0, 0, "ROBOT LISTO     "); // FIN TRAZO
-            }
-            else if (accion == 3 && robot_dibujando == 0) { // ACCIÓN 3: LÍNEA
-                robot_dibujando = 1; // CIERRA CANDADO
-                Display_LCD_Escribir(0, 0, "DIBUJANDO LINEA "); // AVISO DIBUJO
-                Dibujar_Linea_Aleatoria(); // EJECUTA TRAZO
-                robot_dibujando = 0; // ABRE CANDADO
-                Display_LCD_Escribir(0, 0, "ROBOT LISTO     "); // AÑADIDO PUNTO Y COMA QUE FALTABA
-            }
-        } // CIERRA ELSE IF DE ACCIÓN
+  /* USER CODE BEGIN WHILE */
+  while (1)
+  {
     /* USER CODE END WHILE */
+	  // 1. ESPERAMOS A QUE PULSES UN BOTÓN (EJ. PC2) PARA EMPEZAR
+	      if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_2) == GPIO_PIN_RESET)
+	      {
+	          printf("Girando tambor... Buscando el iman ✨\r\n");
 
+	          // 2. DAMOS GAS AL SERVO (EMPIEZA A GIRAR POR VELOCIDAD)
+	          __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_1, GRIPPER_SPEED);
+
+	          // 3. BUCLE DE STALKER: ESPERAMOS AL SENSOR HALL (PC1)
+	          // El sensor suele dar un '0' (RESET) cuando detecta el iman
+	          while(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_1) == GPIO_PIN_SET)
+	          {
+	              // Aquí el micro no hace nada, solo vigila el pin del Hall
+	              // Si el tambor da vueltas y vueltas y no para, es que el iman esta lejos
+	          }
+
+	          // 4. ¡FRENAZO! DETECTADO EL COLOR
+	          __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_1, GRIPPER_STOP);
+	          printf("¡STOP! Iman detectado por el Sensor Hall 🎯\r\n");
+
+	          // Pequeño delay para no leer el mismo iman dos veces por error
+	          HAL_Delay(1000);
+	          printf("Listo para otra busqueda.\r\n");
+	      }
+
+	      // Un poquito de relax para el micro
+	      HAL_Delay(10);
     /* USER CODE BEGIN 3 */
-
-    } // CIERRA EL WHILE(1) CORRECTAMENTE
-    /* USER CODE END 3 */
-
-	if (color_seleccionado_cambio) {
-	    float q4 = 2.094f;  // 120° en radianes = color 2
-	    IK_Actualizar_Brazo_Efectivo(q4);
-	    color_seleccionado_cambio = 0;  // reset del flag
   }
   /* USER CODE END 3 */
-
 }
 
 /**
@@ -199,15 +179,14 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_OFF;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = 8;
-  RCC_OscInitStruct.PLL.PLLN = 50;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLM = 4;
+  RCC_OscInitStruct.PLL.PLLN = 192;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV4;
-  RCC_OscInitStruct.PLL.PLLQ = 7;
+  RCC_OscInitStruct.PLL.PLLQ = 8;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -220,9 +199,9 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_3) != HAL_OK)
   {
     Error_Handler();
   }
@@ -282,7 +261,7 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 15;
+  htim1.Init.Prescaler = 4;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim1.Init.Period = 999;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -356,7 +335,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 0;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 65535;
+  htim2.Init.Period = 4294967295;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   sConfig.EncoderMode = TIM_ENCODERMODE_TI1;
@@ -501,7 +480,7 @@ static void MX_TIM5_Init(void)
 
   /* USER CODE END TIM5_Init 1 */
   htim5.Instance = TIM5;
-  htim5.Init.Prescaler = 15;
+  htim5.Init.Prescaler = 99;
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim5.Init.Period = 19999;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -532,6 +511,55 @@ static void MX_TIM5_Init(void)
 }
 
 /**
+  * @brief USART2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART2_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART2_Init 0 */
+
+  /* USER CODE END USART2_Init 0 */
+
+  /* USER CODE BEGIN USART2_Init 1 */
+
+  /* USER CODE END USART2_Init 1 */
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 115200;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART2_Init 2 */
+
+  /* USER CODE END USART2_Init 2 */
+
+}
+
+/**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Stream6_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream6_IRQn);
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -551,31 +579,31 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, DIR_J1_IN1_Pin|DIR_J1_IN2_Pin|DIR_J2_IN1_Pin|DIR_J2_IN2_Pin
-                          |DIR_Z_IN1_Pin|DIR_Z_IN2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOE, GIRO_BR1_In1_Pin|GIRO_BR1_In2_Pin|GIRO_BR2_In2_Pin|GIRO_BA_In1_Pin
+                          |GIRO_BA_In2_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : HALL_SENSOR_Pin BTN_C1_Pin BTN_C2_Pin BTN_C3_Pin
-                           BTN_START_Pin */
-  GPIO_InitStruct.Pin = HALL_SENSOR_Pin|BTN_C1_Pin|BTN_C2_Pin|BTN_C3_Pin
-                          |BTN_START_Pin;
+  /*Configure GPIO pins : SENSOR_Hall_Pin BTN_COLOR_Pin BTN_LINEA_Pin BTN_CIRCULO_Pin
+                           BTN_RESET_Pin */
+  GPIO_InitStruct.Pin = SENSOR_Hall_Pin|BTN_COLOR_Pin|BTN_LINEA_Pin|BTN_CIRCULO_Pin
+                          |BTN_RESET_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : DIR_J1_IN1_Pin DIR_J1_IN2_Pin DIR_J2_IN1_Pin DIR_J2_IN2_Pin
-                           DIR_Z_IN1_Pin DIR_Z_IN2_Pin */
-  GPIO_InitStruct.Pin = DIR_J1_IN1_Pin|DIR_J1_IN2_Pin|DIR_J2_IN1_Pin|DIR_J2_IN2_Pin
-                          |DIR_Z_IN1_Pin|DIR_Z_IN2_Pin;
+  /*Configure GPIO pins : GIRO_BR1_In1_Pin GIRO_BR1_In2_Pin GIRO_BR2_In2_Pin GIRO_BA_In1_Pin
+                           GIRO_BA_In2_Pin */
+  GPIO_InitStruct.Pin = GIRO_BR1_In1_Pin|GIRO_BR1_In2_Pin|GIRO_BR2_In2_Pin|GIRO_BA_In1_Pin
+                          |GIRO_BA_In2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LIMIT_SW_Z_Pin LIMIT_SW_J2_Pin LIMIT_SW_J1_Pin */
-  GPIO_InitStruct.Pin = LIMIT_SW_Z_Pin|LIMIT_SW_J2_Pin|LIMIT_SW_J1_Pin;
+  /*Configure GPIO pin : GIRO_BR2_In1_Pin */
+  GPIO_InitStruct.Pin = GIRO_BR2_In1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+  HAL_GPIO_Init(GIRO_BR2_In1_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
@@ -589,12 +617,6 @@ static void MX_GPIO_Init(void)
 
   HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI4_IRQn);
-
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
-
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
@@ -616,7 +638,7 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
-  };
+  }
   /* USER CODE END Error_Handler_Debug */
 }
 #ifdef USE_FULL_ASSERT

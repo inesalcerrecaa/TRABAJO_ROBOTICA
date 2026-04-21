@@ -61,4 +61,4 @@ IK_Result_t IK_Resolver_Movimiento (float x_mm, float y_mm, float z_mm){
 
 	 /* USER CODE END Mover_Robot_A_Coordenada */
 	 };
-}
+
