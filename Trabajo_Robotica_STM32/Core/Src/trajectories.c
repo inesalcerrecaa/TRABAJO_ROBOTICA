@@ -9,6 +9,7 @@
 /*USER CODE BEGIN Includes*/
 #include <stdlib.h> //para la funcion rand
 #include <math.h> //para calcular la interpolacion circular
+#include "kinematics.h"
 /*USER CODE END Includes*/
 
 /*USER CODE BEGIN PD*/
@@ -20,7 +21,24 @@
 /*USER CODE BEGIN 0*/
 //Funciones fantasma, cuando Maria y Alba termineis, conectareis vuestro codigo aqui dentro
 void Mover_Robot_A_Coordenada (int x, int y){
-	//Aqui iran la cinematica de maria y el PID de alba
+	 //BLOQUE DE MARÍA: Cinemática Inversa
+
+	    // El lienzo está a 45°: Sofía ya programó que Z = Y en la compensación.
+	    // La Z que necesita la IK se obtiene directamente de la coordenada Y del lienzo.
+	    float z_mm = (float)y;
+
+	    IK_Result_t ik = IK_Resolver_Movimiento((float)x, (float)y, z_mm);
+
+	    if (!ik.valid) {
+	        // Punto fuera de rango: no mover, esperar siguiente frame
+	        return;
+	    }
+
+	    // --- BLOQUE DE ALBA: PID y motores ---
+	    // Alba rellena estas funciones en pid_core.c y pwm_motors.c
+	    PID_SetTarget_Hombro(ik.q1_rad);   // → TIM1_CH1 (PE9) + DIR_J1 (PE7/PE8)
+	    PID_SetTarget_Codo(ik.q3_rad);     // → TIM1_CH2 (PE11) + DIR_J2 (PE10/PE12)
+	    Mover_Eje_Z(ik.q2_mm);            // → TIM1_CH3 (PE13) + DIR_Z (PE14/PE15)
 	//AVISO A ALBA: al trazar las lineas, los motores X, Y, Z tienen que moverse a la vez
 }
 
