@@ -12,7 +12,11 @@
 
 /* USER CODE BEGIN Private Variables */
 /* Variables internas del brazo efectivo (se calculan con IK_Update_Effective_Arm) */
+<<<<<<< Updated upstream
 static float s_L_eff = L2 + L_xy; // CAMBIADO L_XY POR L_xy POR MINÚSCULAS
+=======
+static float s_L_eff = L2 + L_xy;  /* Valor inicial con q4=0 */
+>>>>>>> Stashed changes
 static float s_alpha  = 0.0f;
 /* USER CODE END Private Variables */
 
@@ -60,5 +64,9 @@ IK_Result_t IK_Resolver_Movimiento (float x_mm, float y_mm, float z_mm){
 	 return resultado;
 
 	 /* USER CODE END Mover_Robot_A_Coordenada */
+<<<<<<< Updated upstream
 	 };
 
+=======
+}
+>>>>>>> Stashed changes
