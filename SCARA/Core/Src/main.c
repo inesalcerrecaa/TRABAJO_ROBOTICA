@@ -21,7 +21,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "hri.h"
+#include "hri.h" // GESTIÓN DE PANTALLA Y BOTONES
+#include "gripper.h" // CONTROL DEL SERVO Y SENSOR HALL
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -52,12 +53,7 @@ UART_HandleTypeDef huart2;
 DMA_HandleTypeDef hdma_usart2_tx;
 
 /* USER CODE BEGIN PV */
-#define GRIPPER_STOP  1500
-#define GRIPPER_SPEED 1650
 
-// Array con los nombres de los colores (asegúrate de que ocupen espacios para limpiar la pantalla)
-char* lista_colores[4] = {"ROJO   ", "AZUL   ", "VERDE  "};
-int color_actual = 0; // Empezamos en el primer color (0 = ROJO)
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -72,11 +68,7 @@ static void MX_TIM4_Init(void);
 static void MX_TIM5_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
-void LCD_Init(void);
-void Display_LCD_Escribir(uint8_t fila, uint8_t col, char *texto);
-int Leer_Botones_Accion(void);
-int Leer_Boton_Reset(void);
-int Leer_Sensor_Hall(void);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -123,91 +115,56 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  // Arrancamos el motor parado
-    HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_1);
-    __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_1, GRIPPER_STOP);
-
-    // Inicializamos la pantalla y mostramos el estado inicial
-    LCD_Init();
-    Display_LCD_Escribir(0, 0, "SCARA LISTO!    ");
-    Display_LCD_Escribir(1, 0, "COLOR: ");
-    Display_LCD_Escribir(1, 7, lista_colores[color_actual]);
+  Gripper_Init(); // INICIA SERVO PARADO
+  LCD_Init(); // INICIA PANTALLA LCD
+  Display_LCD_Escribir(0, 0, "SCARA LISTO!    "); // MENSAJE BIENVENIDA
+  Display_LCD_Escribir(1, 0, "COLOR: "); // ETIQUETA FIJA FILA 2
+  Display_LCD_Escribir(1, 7, Gripper_GetColorActual()); // COLOR INICIAL
 
   /* USER CODE END 2 */
 
-	/* Infinite loop */
+  /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  // Leemos los botones usando tu función del archivo hri
-	  int accion = Leer_Botones_Accion();
-	  int reset = Leer_Boton_Reset();
+    /* USER CODE END WHILE */
 
-	  // --- SI PULSAN RESET (Pulsación larga) ---
+	  int accion = Leer_Botones_Accion(); // LEE BOTONES HRI
+	  int reset  = Leer_Boton_Reset();    // LEE BOTÓN RESET
+
 	  if (reset == 1) {
-		  Display_LCD_Escribir(0, 0, "SISTEMA RESET   ");
-		  color_actual = 0; // Volvemos al color Rojo por defecto
-		  Display_LCD_Escribir(1, 7, lista_colores[color_actual]);
-
-		  HAL_Delay(1500);
-		  Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
+	      Gripper_Reset();// RESET MÓDULO GRIPPER
+	      // RESET RESTO DE MÓDULOS
+		  //Motion_Reset()
+		  //Kinematics_Reset()
+	      Display_LCD_Escribir(0, 0, "SISTEMA RESET   "); // MENSAJE RESET LCD
+	      Display_LCD_Escribir(1, 7, Gripper_GetColorActual()); // MUESTRA COLOR TRAS RESET
+	      HAL_Delay(1500);
+	      Display_LCD_Escribir(0, 0, "ROBOT LISTO     "); // MENSAJE LISTO LCD
+	  }
+	  // BTN COLOR: GIRA TAMBOR
+	  else if (accion == 1) {
+	      Display_LCD_Escribir(0, 0, "CAMBIANDO COLOR."); // AVISO EN LCD
+	      char* color = Gripper_SiguienteColor(); // GIRA Y PARA EN IMÁN
+	      Display_LCD_Escribir(1, 7, color); // MUESTRA NUEVO COLOR
+	      Display_LCD_Escribir(0, 0, "ROBOT LISTO     "); // MENSAJE LISTO LCD
+	  }
+	  // BTN CÍRCULO: AÚN SIN IMPLEMENTAR
+	  else if (accion == 2) {
+	      Display_LCD_Escribir(0, 0, "MODO PINTAR OFF "); // AVISO TEMPORAL
+	      HAL_Delay(1000);
+	      Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
+	  }
+	  // BTN LÍNEA: AÚN SIN IMPLEMENTAR
+	  else if (accion == 3) {
+	      Display_LCD_Escribir(0, 0, "MODO PINTAR OFF "); // AVISO TEMPORAL
+	      HAL_Delay(1000);
+	      Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
 	  }
 
-	  // --- SI PULSAN BOTONES NORMALES ---
-	  else if (accion != 0) {
+	  HAL_Delay(10); // EVITA SATURAR EL BUCLE
 
-		  // Acción 1: BOTÓN DE COLOR
-		  if (accion == 1) {
-			  // Pasamos al siguiente color
-			  color_actual++;
-			  if(color_actual > 2) { // Tienes 3 colores en tu nuevo array (0, 1, 2)
-				  color_actual = 0;
-			  }
-
-			  // Mostramos en pantalla que estamos buscando el color
-			  Display_LCD_Escribir(0, 0, "CAMBIANDO COLOR.");
-			  Display_LCD_Escribir(1, 7, lista_colores[color_actual]);
-
-			  // Damos gas al motor del tambor
-			  __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_1, GRIPPER_SPEED);
-
-			  // RETARDO VITAL: Para que el imán actual salga de la zona del sensor
-			  HAL_Delay(500);
-
-			  // Bucle de espera: Nos quedamos aquí hasta que el sensor detecte el SIGUIENTE imán
-			  while(Leer_Sensor_Hall() == 0)
-			  {
-				  // El micro no hace nada, solo espera al imán mientras el tambor gira
-			  }
-
-			  // ¡Imán detectado! Frenazo en seco
-			  __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_1, GRIPPER_STOP);
-
-			  // Volvemos al estado inicial en la pantalla
-			  Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
-		  }
-
-		  // Acción 2: BOTÓN DE CÍRCULO - Mensaje de aviso
-		  else if (accion == 2) {
-			  Display_LCD_Escribir(0, 0, "MODO PINTAR OFF ");
-			  HAL_Delay(1000);
-			  Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
-		  }
-
-		  // Acción 3: BOTÓN DE LÍNEA - Mensaje de aviso
-		  else if (accion == 3) {
-			  Display_LCD_Escribir(0, 0, "MODO PINTAR OFF ");
-			  HAL_Delay(1000);
-			  Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
-		  }
-	  }
-
-	  // Un pequeño delay para que el bucle no sature el microcontrolador
-	  HAL_Delay(10);
-
-	/* USER CODE END WHILE */
-
-	/* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
@@ -229,11 +186,12 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_OFF;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 4;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLM = 8;
   RCC_OscInitStruct.PLL.PLLN = 192;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV4;
   RCC_OscInitStruct.PLL.PLLQ = 8;
