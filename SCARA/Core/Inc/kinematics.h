@@ -23,6 +23,7 @@ typedef struct {
     float q2_mm;     /* Traslación del tronco (mm)             */
     float q3_rad;    /* Ángulo del codo (rad)                  */
     uint8_t valid;   /* 1 = punto alcanzable, 0 = fuera rango  */
+    float   q4_perp_rad;
 } IK_Result_t;
 
 /* PROTOTIPO DE FUNCIONES PÚBLICAS */
