@@ -21,9 +21,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "encoder_hw.h"       // INCLUYE CABECERA DE ENCODERS
-#include "i2c_lcd_hri.h"      // INCLUYE CABECERA DE PANTALLA
-#include "kinematics.h"       // INCLUYE CABECERA DE CINEMÁTICA (FALTABA ESTA ⚠️)
+#include "encoder_hw.h"
+#include "i2c_lcd_hri.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -52,8 +51,6 @@ TIM_HandleTypeDef htim5;
 
 /* USER CODE BEGIN PV */
 
-volatile uint8_t color_seleccionado_cambio = 0; // DECLARA VARIABLE DE ESTADO GLOBAL
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -70,6 +67,12 @@ static void MX_TIM5_Init(void);
 void Dibujar_Linea_Aleatoria(void);
 void Dibujar_Circulo_Aleatorio(void);
 void Subir_Rotulador(int y_actual);
+
+//presentamos funciones externas para que el main no se asuste
+void Encoders_Init(void);
+void Display_LCD_Escribir(int fila, int col, char* texto);
+int Leer_Botones_Accion(void);
+int Leer_Boton_Reset(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -114,72 +117,83 @@ int main(void)
   MX_TIM5_Init();
 
   /* USER CODE BEGIN 2 */
-  //arranco los encoders por hardware (Sofia)
-  Encoders_Init();
-
   //nuestro candado de seguridad 0 libre, 1 ocupado
   uint8_t robot_dibujando = 0;
+
+  //arranco los encoders por hardware (Sofia)
+  Encoders_Init();
 
   //mensaje inicial
   Display_LCD_Escribir(0, 0, "ROBOT LISTO");
   /* USER CODE END 2 */
 
   /* Infinite loop */
-  /* Infinite loop */
-    /* USER CODE BEGIN WHILE */
-    while (1)
-    {
-        int accion = Leer_Botones_Accion(); // LEE ACCIÓN DEL USUARIO
-        int reset = Leer_Boton_Reset();     // LEE BOTÓN DE EMERGENCIA
+  /* USER CODE BEGIN WHILE */
+  while (1)
+  {
+	  //leemos botones
+	  int accion = Leer_Botones_Accion();
+	  int reset = Leer_Boton_Reset();
 
-        if (reset == 1) { // PRIORIDAD 1: RESET DEL SISTEMA
-            robot_dibujando = 0; // LIBERA EL CANDADO
-            Subir_Rotulador(0);  // ELEVA EJE Z
-            Display_LCD_Escribir(0, 0, "SISTEMA RESET   "); // AVISO LCD
-            HAL_Delay(1500); // ESPERA DE CORTESÍA
-            Display_LCD_Escribir(0, 0, "ROBOT LISTO     "); // ESTADO REPOSO
-        }
-        else if (accion != 0) { // PRIORIDAD 2: EJECUTA ACCIONES
-            if (accion == 1) { // ACCIÓN 1: GIRAR GRIPPER
-                if (robot_dibujando == 0) { // VERIFICA QUE NO PINTA
-                    Display_LCD_Escribir(0, 0, "GIRANDO GRIPPER "); // AVISO GIRO
-                    HAL_Delay(500); // TIEMPO DE MANIOBRA
-                    Display_LCD_Escribir(0, 0, "ROBOT LISTO     "); // VUELVE A LISTO
-                } else {
-                    Display_LCD_Escribir(0, 0, "ERROR: DIBUJANDO"); // AVISO BLOQUEO
-                    HAL_Delay(1000); // PAUSA ERROR
-                    Display_LCD_Escribir(0, 0, "DIBUJANDO...    "); // VUELVE AL ESTADO PREVIO
-                }
-            }
-            else if (accion == 2 && robot_dibujando == 0) { // ACCIÓN 2: CÍRCULO
-                robot_dibujando = 1; // CIERRA CANDADO
-                Display_LCD_Escribir(0, 0, "DIBUJANDO CIRCUL"); // AVISO DIBUJO
-                Dibujar_Circulo_Aleatorio(); // EJECUTA TRAZO
-                robot_dibujando = 0; // ABRE CANDADO
-                Display_LCD_Escribir(0, 0, "ROBOT LISTO     "); // FIN TRAZO
-            }
-            else if (accion == 3 && robot_dibujando == 0) { // ACCIÓN 3: LÍNEA
-                robot_dibujando = 1; // CIERRA CANDADO
-                Display_LCD_Escribir(0, 0, "DIBUJANDO LINEA "); // AVISO DIBUJO
-                Dibujar_Linea_Aleatoria(); // EJECUTA TRAZO
-                robot_dibujando = 0; // ABRE CANDADO
-                Display_LCD_Escribir(0, 0, "ROBOT LISTO     "); // AÑADIDO PUNTO Y COMA QUE FALTABA
-            }
-        } // CIERRA ELSE IF DE ACCIÓN
+	  //PRIORIDAD 1: BOTÓN DE RESET (Pánico / Pulsación Larga)
+	        if (reset == 1) {
+	            robot_dibujando = 0; // Rompemos el candado por si se había quedado bloqueado
+	            Subir_Rotulador(0);  // Levantamos el rotulador a tope por seguridad
+
+	            Display_LCD_Escribir(0, 0, "SISTEMA RESET   ");
+	            HAL_Delay(1500);     // Esperamos un segundo y medio
+	            Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
+	        }
+
+	        //PRIORIDAD 2: ACCIONES NORMALES
+	        else if (accion != 0) {
+
+	            // Acción 1: Girar Gripper
+	            if (accion == 1) {
+	                if (robot_dibujando == 0) {
+	                    Display_LCD_Escribir(0, 0, "GIRANDO GRIPPER ");
+
+	                    // AVISO: Aquí irá la función de girar el tambor de colores
+	                    HAL_Delay(500); // Simulamos que tarda un poco
+
+	                    Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
+	                } else {
+	                    // Si intentan girar mientras pinta, les regañamos
+	                    Display_LCD_Escribir(0, 0, "ERROR: DIBUJANDO");
+	                    HAL_Delay(1000);
+	                    // Volvemos a poner lo que estaba haciendo
+	                    Display_LCD_Escribir(0, 0, "DIBUJANDO...    ");
+	                }
+	            }
+
+	            // Acción 2: Dibujar Círculo
+	            else if (accion == 2 && robot_dibujando == 0) {
+	                robot_dibujando = 1; // CERRAMOS CANDADO
+	                Display_LCD_Escribir(0, 0, "DIBUJANDO CIRCUL");
+
+	                Dibujar_Circulo_Aleatorio(); // ¡Llamamos a tu super función!
+
+	                robot_dibujando = 0; // ABRIMOS CANDADO
+	                Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
+	            }
+
+	            // Acción 3: Dibujar Línea
+	            else if (accion == 3 && robot_dibujando == 0) {
+	                robot_dibujando = 1; // CERRAMOS CANDADO
+	                Display_LCD_Escribir(0, 0, "DIBUJANDO LINEA ");
+
+	                Dibujar_Linea_Aleatoria(); // ¡Llamamos a tu super función!
+
+	                robot_dibujando = 0; // ABRIMOS CANDADO
+	                Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
+	            }
+	        }
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
-    } // CIERRA EL WHILE(1) CORRECTAMENTE
-    /* USER CODE END 3 */
-
-	if (color_seleccionado_cambio) {
-	    float q4 = 2.094f;  // 120° en radianes = color 2
-	    IK_Actualizar_Brazo_Efectivo(q4);
-	    color_seleccionado_cambio = 0;  // reset del flag
   }
   /* USER CODE END 3 */
-
 }
 
 /**
@@ -616,7 +630,7 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
-  };
+  }
   /* USER CODE END Error_Handler_Debug */
 }
 #ifdef USE_FULL_ASSERT
