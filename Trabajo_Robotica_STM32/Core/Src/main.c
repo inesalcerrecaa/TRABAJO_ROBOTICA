@@ -122,69 +122,52 @@ int main(void)
   /* USER CODE END 2 */
 
   /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-	  //leemos botones
-	  int accion = Leer_Botones_Accion();
-	  int reset = Leer_Boton_Reset();
+  /* Infinite loop */
+    /* USER CODE BEGIN WHILE */
+    while (1)
+    {
+        int accion = Leer_Botones_Accion(); // LEE ACCIÓN DEL USUARIO
+        int reset = Leer_Boton_Reset();     // LEE BOTÓN DE EMERGENCIA
 
-	  //PRIORIDAD 1: BOTÓN DE RESET (Pánico / Pulsación Larga)
-	        if (reset == 1) {
-	            robot_dibujando = 0; // Rompemos el candado por si se había quedado bloqueado
-	            Subir_Rotulador(0);  // Levantamos el rotulador a tope por seguridad
-
-	            Display_LCD_Escribir(0, 0, "SISTEMA RESET   ");
-	            HAL_Delay(1500);     // Esperamos un segundo y medio
-	            Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
-	        }
-
-	        //PRIORIDAD 2: ACCIONES NORMALES
-	        else if (accion != 0) {
-
-	            // Acción 1: Girar Gripper
-	            if (accion == 1) {
-	                if (robot_dibujando == 0) {
-	                    Display_LCD_Escribir(0, 0, "GIRANDO GRIPPER ");
-
-	                    // AVISO: Aquí irá la función de girar el tambor de colores
-	                    HAL_Delay(500); // Simulamos que tarda un poco
-
-	                    Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
-	                } else {
-	                    // Si intentan girar mientras pinta, les regañamos
-	                    Display_LCD_Escribir(0, 0, "ERROR: DIBUJANDO");
-	                    HAL_Delay(1000);
-	                    // Volvemos a poner lo que estaba haciendo
-	                    Display_LCD_Escribir(0, 0, "DIBUJANDO...    ");
-	                }
-	            }
-
-	            // Acción 2: Dibujar Círculo
-	            else if (accion == 2 && robot_dibujando == 0) {
-	                robot_dibujando = 1; // CERRAMOS CANDADO
-	                Display_LCD_Escribir(0, 0, "DIBUJANDO CIRCUL");
-
-	                Dibujar_Circulo_Aleatorio(); // ¡Llamamos a tu super función!
-
-	                robot_dibujando = 0; // ABRIMOS CANDADO
-	                Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
-	            }
-
-	            // Acción 3: Dibujar Línea
-	            else if (accion == 3 && robot_dibujando == 0) {
-	                robot_dibujando = 1; // CERRAMOS CANDADO
-	                Display_LCD_Escribir(0, 0, "DIBUJANDO LINEA ");
-
-	                Dibujar_Linea_Aleatoria(); // ¡Llamamos a tu super función!
-
-	                robot_dibujando = 0; // ABRIMOS CANDADO
-	                Display_LCD_Escribir(0, 0, "ROBOT LISTO     ")
+        if (reset == 1) { // PRIORIDAD 1: RESET DEL SISTEMA
+            robot_dibujando = 0; // LIBERA EL CANDADO
+            Subir_Rotulador(0);  // ELEVA EJE Z
+            Display_LCD_Escribir(0, 0, "SISTEMA RESET   "); // AVISO LCD
+            HAL_Delay(1500); // ESPERA DE CORTESÍA
+            Display_LCD_Escribir(0, 0, "ROBOT LISTO     "); // ESTADO REPOSO
+        }
+        else if (accion != 0) { // PRIORIDAD 2: EJECUTA ACCIONES
+            if (accion == 1) { // ACCIÓN 1: GIRAR GRIPPER
+                if (robot_dibujando == 0) { // VERIFICA QUE NO PINTA
+                    Display_LCD_Escribir(0, 0, "GIRANDO GRIPPER "); // AVISO GIRO
+                    HAL_Delay(500); // TIEMPO DE MANIOBRA
+                    Display_LCD_Escribir(0, 0, "ROBOT LISTO     "); // VUELVE A LISTO
+                } else {
+                    Display_LCD_Escribir(0, 0, "ERROR: DIBUJANDO"); // AVISO BLOQUEO
+                    HAL_Delay(1000); // PAUSA ERROR
+                    Display_LCD_Escribir(0, 0, "DIBUJANDO...    "); // VUELVE AL ESTADO PREVIO
+                }
+            }
+            else if (accion == 2 && robot_dibujando == 0) { // ACCIÓN 2: CÍRCULO
+                robot_dibujando = 1; // CIERRA CANDADO
+                Display_LCD_Escribir(0, 0, "DIBUJANDO CIRCUL"); // AVISO DIBUJO
+                Dibujar_Circulo_Aleatorio(); // EJECUTA TRAZO
+                robot_dibujando = 0; // ABRE CANDADO
+                Display_LCD_Escribir(0, 0, "ROBOT LISTO     "); // FIN TRAZO
+            }
+            else if (accion == 3 && robot_dibujando == 0) { // ACCIÓN 3: LÍNEA
+                robot_dibujando = 1; // CIERRA CANDADO
+                Display_LCD_Escribir(0, 0, "DIBUJANDO LINEA "); // AVISO DIBUJO
+                Dibujar_Linea_Aleatoria(); // EJECUTA TRAZO
+                robot_dibujando = 0; // ABRE CANDADO
+                Display_LCD_Escribir(0, 0, "ROBOT LISTO     "); // AÑADIDO PUNTO Y COMA QUE FALTABA
+            }
+        } // CIERRA ELSE IF DE ACCIÓN
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
-  /* USER CODE END 3 */
+    } // CIERRA EL WHILE(1) CORRECTAMENTE
+    /* USER CODE END 3 */
 }
 
 /**
@@ -621,7 +604,7 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
-  }
+  };
   /* USER CODE END Error_Handler_Debug */
 }
 #ifdef USE_FULL_ASSERT

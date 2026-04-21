@@ -12,7 +12,7 @@
 
 /* USER CODE BEGIN Private Variables */
 /* Variables internas del brazo efectivo (se calculan con IK_Update_Effective_Arm) */
-static float s_L_eff = L2 + L_XY;  /* Valor inicial con q4=0 */
+static float s_L_eff = L2 + L_xy; // CAMBIADO L_XY POR L_xy POR MINÚSCULAS
 static float s_alpha  = 0.0f;
 /* USER CODE END Private Variables */
 
