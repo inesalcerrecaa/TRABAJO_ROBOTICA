@@ -23,7 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include "hri.h"
 #include "main.h"
-#include "kinmatics.h" // El trabajo de María
+#include "kinematics.h" // El trabajo de María
 #include"motion.h"
 #include"hri.h"  //para Leer_boton_start
 
@@ -66,8 +66,13 @@ PID_Controller pidJ2;
 PID_Controller pidZ;
 
 uint32_t tiempoAnterior = 0;
-float posicionRealZ = 0.0;
-float posicionRealBase = 0.0;
+
+// Variables externas de María - los objetivos que calcula la cinemática
+extern volatile float objetivo_q1;
+extern volatile float objetivo_q3;
+extern volatile float objetivo_z;
+
+
 
 
 
@@ -139,9 +144,9 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  PID_Init(&pidJ1, 2.0f,0.1f,0.1f,200.0f);
-  PID_Init(&pidJ2, 1.2f,0.1f,0.04f,120.0f);
-  PID_Init(&pidZ, 4.0f,0.5f,0.2f,150.0f);
+  PID_Init(&pidJ1, 200.0f, 10.0f, 10.0f,  50.0f);  // kp mucho más alto
+  PID_Init(&pidJ2, 150.0f, 10.0f,  5.0f,  50.0f);
+  PID_Init(&pidZ,   50.0f,  5.0f,  2.0f,  30.0f); //z en mm
 
   // Arrancar los motores
      HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1); // Enciende la base J1
@@ -177,36 +182,31 @@ int main(void)
 	          tiempoAnterior = ahora;
 
 
-	          //COMPROBAR NOMBRE FUNCION SOFIA
+
 	          //si, con la funcion de sofia, se ha pulsado el boton de reset, HOMING
-	          //comprobar valor sofia
 	          if (Leer_Boton_Reset()==1){
 	              Homing();
 	          }
 
 
 	          // Coordenadas que nos da maria de la cinemática COMPROBAR FUNCION y que ella ha creado una restuctura llamada ResultadosCinematica con los resultados del J1, J2, y Z
-	           ResultadosCinematica objetivos = obtenerAngulos();
+	          // ResultadosCinematica objetivos = obtenerAngulos();
 
 	          //Lectura de los sensores de los motores para las positicones actuales
 
 
-	          //COMPROBAR NOMBRE FUNCION SOFIA
-	           float pasosJ1 = Leer_Pasos_Encoder(1);
-	           float pasosJ2 = Leer_Pasos_Encoder(2);
-	           float pasosZ = Leer_Pasos_Encoder(3);
-
-	           float realJ1=pasosJ1*(360.0f/3960.0f);
-	           float realJ2=pasosJ2*(360.0f/3960.0f);
-	           float realZ=pasosZ*(360.0f/3960.0f);
+	          //Devuelve radianes
+	           float realJ1=(float)Leer_Pasos_Encoder(1) * PASOS_A_RAD;
+	           float realJ2=(float)Leer_Pasos_Encoder(2)*PASOS_A_RAD;
+	           float realZ=(float)Leer_Pasos_Encoder(3) * PASOS_A_MM;
 
 
 
 	          //Actualizacion de los 3 motores
 
-	         Update_Motor_Axis(&pidJ1, realJ1, objetivos.j1, dt, &htim1, TIM_CHANNEL_1, GPIOE, GPIO_PIN_7, GPIO_PIN_8);
-	         Update_Motor_Axis(&pidJ2, realJ2, objetivos.j2, dt, &htim1, TIM_CHANNEL_2, GPIOE, GPIO_PIN_10, GPIO_PIN_12);
-	         Update_Motor_Axis(&pidZ, realZ, objetivos.z, dt, &htim1, TIM_CHANNEL_3, GPIOE, GPIO_PIN_14, GPIO_PIN_15);
+	         Update_Motor_Axis(&pidJ1, realJ1, objetivos_q1, dt, &htim1, TIM_CHANNEL_1, GPIOE, GPIO_PIN_7, GPIO_PIN_8);
+	         Update_Motor_Axis(&pidJ2, realJ2, objetivos_q3, dt, &htim1, TIM_CHANNEL_2, GPIOE, GPIO_PIN_10, GPIO_PIN_12);
+	         Update_Motor_Axis(&pidZ, realZ, objetivos_z, dt, &htim1, TIM_CHANNEL_3, GPIOE, GPIO_PIN_14, GPIO_PIN_15);
 
 
 
@@ -217,10 +217,11 @@ int main(void)
 	              tiempoDebug = ahora; //resetear cronometro para volver a contar hasta 100ms y enviar datos
 	              //mandarr datos a la funcion para imprimir
 	              Interfaz_enviar(
-	                              realJ1, objetivos.j1, PID_GetVoltaje(&pidJ1),
-	                              realJ2, objetivos.j2,  PID_GetVoltaje(&pidJ2),
-	                              realZ, objetivos.z,  PID_GetVoltaje(&pidZ)
+	                              realJ1, objetivos_q1, PID_GetVoltaje(&pidJ1),
+	                              realJ2, objetivos_q3,  PID_GetVoltaje(&pidJ2),
+	                              realZ, objetivos_z,  PID_GetVoltaje(&pidZ)
 	                          );
+	          }
 
 	  // Leemos los botones usando tu función del archivo hri
 	  int accion = Leer_Botones_Accion();
