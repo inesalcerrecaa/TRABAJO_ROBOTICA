@@ -14,6 +14,9 @@
 /* Variables internas del brazo efectivo (se calculan con IK_Update_Effective_Arm) */
 static float s_L_eff = L2 + L_xy;  /* Valor inicial con q4=0 */
 static float s_alpha  = 0.0f;
+volatile float objetivo_q1=0.0f;
+volatile float objetivo_q3=0.0f;
+volatile float objetivo_z=0.0f;
 /* USER CODE END Private Variables */
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
@@ -66,6 +69,9 @@ IK_Result_t IK_Resolver_Movimiento (float x_mm, float y_mm, float z_mm){
 	/*si pasa todo esto significa que el punto será válido por lo que: */
 	 resultado.valid=1;
 
+	 objetivo_q1=resultado.q1_rad;
+	 objetivo_q3=resultado.q3_rad;
+	 objetivo_z=resultado.q2_mm;
 	 return resultado;
 
 	 /* USER CODE END IK_Resolver_Movimiento */
