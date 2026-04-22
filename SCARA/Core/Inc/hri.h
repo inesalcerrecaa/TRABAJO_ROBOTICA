@@ -9,5 +9,4 @@
 #define INC_HRI_H_
 
 
-
 #endif /* INC_HRI_H_ */
