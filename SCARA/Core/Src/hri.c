@@ -14,8 +14,7 @@ void HRI_Update(void) // REFRESCAR ENTRADAS
 
     /* Flanco de bajada + anti-rebote */
     if ((current_state == GPIO_PIN_RESET) && // DETECTA PULSACIÓN
-        (last_state    == GPIO_PIN_SET)   && // FLANCO DE BAJADA
-        (HAL_GetTick() - last_press_ms > DEBOUNCE_MS)) // FILTRA RUIDO
+        (last_state    == GPIO_PIN_SET))
     {
         last_press_ms = HAL_GetTick(); // RESETEA TEMPORIZADOR
         Gripper_MoveNext();            // MUEVE EL GRIPPER
