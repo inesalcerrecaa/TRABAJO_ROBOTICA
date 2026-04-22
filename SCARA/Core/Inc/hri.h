@@ -1,13 +1,10 @@
-/*
- * hri.h
- *
- *  Created on: 21 abr 2026
- *      Author: Tester
- */
+/* hri.h */
+#ifndef HRI_H // EVITA DOBLE INCLUSIÓN
+#define HRI_H // DEFINE IDENTIFICADOR
 
-#ifndef INC_HRI_H_
-#define INC_HRI_H_
+#include "stm32f4xx_hal.h" // LIBRERÍA BASE HAL
 
+void HRI_Update(void); // PROTOTIPO REFRESCO HRI
+void HRI_Init(void);
 
-
-#endif /* INC_HRI_H_ */
+#endif /* HRI_H */ // FIN DE GUARDAS
