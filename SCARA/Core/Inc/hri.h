@@ -19,4 +19,4 @@ int Leer_Botones_Accion(void);
 int Leer_Boton_Reset(void);
 int Leer_Sensor_Hall(void);
 
-#endif /* INC_HRI_H_ */
+#endif

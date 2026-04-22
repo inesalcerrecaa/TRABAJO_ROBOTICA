@@ -1,5 +1,5 @@
 #include "main.h"
-#include "hri.h" // <-- OJO: pon aquí el nombre de tu archivo .h
+#include "hri.h" //<-- OJO: pon aquí el nombre de tu archivo .h
 
 extern I2C_HandleTypeDef hi2c1;
 #define LCD_ADDR 0x4E
