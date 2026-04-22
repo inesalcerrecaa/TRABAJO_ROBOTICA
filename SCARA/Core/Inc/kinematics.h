@@ -9,7 +9,7 @@
 #define INC_KINEMATICS_H_
 /* USER CODE BEGIN Includes */
 #include <stdint.h>
-/* USER CODE BEGIN Includes */
+/* USER CODE END Includes */
 
 /* LOS PARAMETROS FÍSICOS DEL ROBOT (en mm) */
 #define L1 200.0f /* Longitud del antebrazo*/
@@ -42,4 +42,6 @@ void IK_Actualizar_Brazo_Efectivo(float q4_rad);
  * @return IK_Result_t  Ángulos articulares + flag de validez
  */
 IK_Result_t IK_Resolver_Movimiento(float x_mm, float y_mm, float z_mm);
+float IK_Calcular_q4_Perpendicular (float x_centro_mm, float y_centro_mm);
 #endif /* INC_KINEMATICS_H_ */
+

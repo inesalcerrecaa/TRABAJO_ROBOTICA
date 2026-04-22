@@ -15,6 +15,10 @@
 static float s_L_eff = L2 + L_xy;  /* Valor inicial con q4=0 */
 static float s_alpha  = 0.0f;
 /* USER CODE END Private Variables */
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+#define IK_PI  3.14159265f
+/* USER CODE END PD */
 
 /* IK_Update_Effective_Arm
  * Llama SOLO cuando cambia q4 (cambio de color en reposo). */
@@ -57,7 +61,6 @@ IK_Result_t IK_Resolver_Movimiento (float x_mm, float y_mm, float z_mm){
 	 /* q4 para perpendicularidad: lienzo a la derecha (+X = 0 rad)
 	    Dirección absoluta del rotu = q1+q3+q4 → para apuntar a +X: total = 0
 	    por tanto q4_perp = 0 - (q1+q3)                                       */
-	 #define IK_PI  3.14159265f
 
 	 resultado.q4_perp_rad = 0.0f - (resultado.q1_rad + resultado.q3_rad);
 	/*si pasa todo esto significa que el punto será válido por lo que: */
@@ -66,4 +69,25 @@ IK_Result_t IK_Resolver_Movimiento (float x_mm, float y_mm, float z_mm){
 	 return resultado;
 
 	 /* USER CODE END IK_Resolver_Movimiento */
+}
+float IK_Calcular_q4_Perpendicular(float x_centro_mm, float y_centro_mm)
+{
+    /* USER CODE BEGIN IK_Calcular_q4_Perpendicular */
+
+    /* 1. Resolvemos la IK en el centro con q4=0 para obtener q1 y q3 reales */
+    IK_Actualizar_Brazo_Efectivo(0.0f);
+    IK_Result_t ref = IK_Resolver_Movimiento(x_centro_mm, y_centro_mm, 0.0f);
+
+    /* 2. q4 necesario para que el rotulador apunte a +X (lienzo a la derecha)
+          q1 + q3 + q4 = 0  →  q4 = -(q1+q3)                               */
+    float q4_optimo = 0.0f - (ref.q1_rad + ref.q3_rad);
+
+    /* 3. Normalizar a [-π, π] por si la suma se sale del rango */
+    #define IK_PI 3.14159265f
+    while (q4_optimo >  IK_PI) q4_optimo -= 2.0f * IK_PI;
+    while (q4_optimo < -IK_PI) q4_optimo += 2.0f * IK_PI;
+
+    return q4_optimo;
+
+    /* USER CODE END IK_Calcular_q4_Perpendicular */
 }
