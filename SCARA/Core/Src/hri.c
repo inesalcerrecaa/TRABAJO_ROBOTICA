@@ -78,12 +78,16 @@ int Leer_Botones_Accion(void)
 
 	// BOTÓN 1: Girar Gripper (PC2)
 	GPIO_PinState estado_btn1 = HAL_GPIO_ReadPin(GPIOC, BTN_COLOR_Pin);
-	if (estado_btn1 == GPIO_PIN_SET) {
+	if (estado_btn1 == GPIO_PIN_RESET) {
+
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET); // TOGGLE LED CADA VEZ QUE SE PULSA
 		if (!btn1_is_pressed) {
 			btn1_is_pressed = 1;
 			btn1_start_time = ahora;
+
 		}
 	} else {
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_RESET);
 		if (btn1_is_pressed){
 			uint32_t duracion = ahora - btn1_start_time;
 			btn1_is_pressed = 0;
