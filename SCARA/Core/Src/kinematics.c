@@ -35,7 +35,7 @@ void IK_Actualizar_Brazo_Efectivo(float q4_rad){
  */
 
 IK_Result_t IK_Resolver_Movimiento (float x_mm, float y_mm, float z_mm){
-	/* USER CODE BEGIN Mover_Robot_A_Coordenada */
+	/* USER CODE BEGIN IK_Resolver_Movimiento */
 	 IK_Result_t resultado={0.0f,0.0f,0.0f,0.0f}; /* valid=0 por defecto*/
 	 /* Segundo paso: el eje Z (tronco que va desacoplado del plano XY) */
 	 resultado.q2_mm=z_mm+L_z;
@@ -54,10 +54,16 @@ IK_Result_t IK_Resolver_Movimiento (float x_mm, float y_mm, float z_mm){
 	 resultado.q3_rad=q3_prima - s_alpha; /*ESTE ES EL ÁNGULO REAL DEL MOTOR*/
 	 /*calculamos el ángulo del hombro */
 	 resultado.q1_rad=atan2f(y_mm,x_mm)- atan2f(s_L_eff*sinf(q3_prima),L1+s_L_eff*cosf(q3_prima));
+	 /* q4 para perpendicularidad: lienzo a la derecha (+X = 0 rad)
+	    Dirección absoluta del rotu = q1+q3+q4 → para apuntar a +X: total = 0
+	    por tanto q4_perp = 0 - (q1+q3)                                       */
+	 #define IK_PI  3.14159265f
+
+	 resultado.q4_perp_rad = 0.0f - (resultado.q1_rad + resultado.q3_rad);
 	/*si pasa todo esto significa que el punto será válido por lo que: */
 	 resultado.valid=1;
 
 	 return resultado;
 
-	 /* USER CODE END Mover_Robot_A_Coordenada */
+	 /* USER CODE END IK_Resolver_Movimiento */
 }
