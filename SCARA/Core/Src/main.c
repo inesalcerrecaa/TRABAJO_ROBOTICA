@@ -561,7 +561,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : BTN_COLOR_Pin */
   GPIO_InitStruct.Pin = BTN_COLOR_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(BTN_COLOR_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : BTN_LINEA_Pin BTN_CIRCULO_Pin BTN_RESET_Pin */

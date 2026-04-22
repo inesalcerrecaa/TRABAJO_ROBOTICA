@@ -21,7 +21,7 @@ void Gripper_MoveNext(void)
     if (moving) return;
 
     set_servo_pwm(SERVO_RUN);
-    moving        = 1;
+    moving = 1;
     move_start_ms = HAL_GetTick();
 }
 

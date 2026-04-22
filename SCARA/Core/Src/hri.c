@@ -8,12 +8,6 @@
 static uint32_t last_press_ms = 0;           // MARCA DE TIEMPO ANTERIOR
 static uint8_t  last_state    = GPIO_PIN_SET; // ESTADO PREVIO PULL-UP
 
-/* Añadir esta función */
-void HRI_Init(void)
-{
-    last_state = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_2); // Lee estado real al arrancar
-}
-
 void HRI_Update(void) // REFRESCAR ENTRADAS
 {
     uint8_t current_state = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_2); // LEE PIN PC2
@@ -28,4 +22,8 @@ void HRI_Update(void) // REFRESCAR ENTRADAS
     }
 
     last_state = current_state; // ACTUALIZA MEMORIA ESTADO
+}
+void HRI_Init(void) {
+    // Puedes dejarla vacía por ahora o usarla para
+    // inicializar variables de estado de los botones.
 }
