@@ -22,6 +22,12 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "hri.h"
+#include "main.h"
+#include "kinmatics.h" // El trabajo de María
+#include"motion.h"
+#include"hri.h"  //para Leer_boton_start
+
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -54,6 +60,16 @@ DMA_HandleTypeDef hdma_usart2_tx;
 /* USER CODE BEGIN PV */
 #define GRIPPER_STOP  1500
 #define GRIPPER_SPEED 1650
+
+PID_Controller pidJ1;
+PID_Controller pidJ2;
+PID_Controller pidZ;
+
+uint32_t tiempoAnterior = 0;
+float posicionRealZ = 0.0;
+float posicionRealBase = 0.0;
+
+
 
 // Array con los nombres de los colores (asegúrate de que ocupen espacios para limpiar la pantalla)
 char* lista_colores[4] = {"ROJO   ", "AZUL   ", "VERDE  "};
@@ -123,6 +139,20 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
+  PID_Init(&pidJ1, 2.0f,0.1f,0.1f,200.0f);
+  PID_Init(&pidJ2, 1.2f,0.1f,0.04f,120.0f);
+  PID_Init(&pidZ, 4.0f,0.5f,0.2f,150.0f);
+
+  // Arrancar los motores
+     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1); // Enciende la base J1
+     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2); // Enciende la traslacion del eje Z
+     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3); //Enciente el codo J2
+
+     Homing();
+
+     tiempoAnterior = HAL_GetTick(); // Empezamos a contar el tiempo
+
+
   // Arrancamos el motor parado
     HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_1);
     __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_1, GRIPPER_STOP);
@@ -139,6 +169,59 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+
+	  //calculo de dt, tiempo que ha pasado desde la ultima iteracion del bucle con respecto a la siguiente
+	          uint32_t ahora = HAL_GetTick();
+	          if ((ahora - tiempoAnterior) < 10) continue;  // espera sin bloquear
+	          float dt = (ahora - tiempoAnterior) / 1000.0f;
+	          tiempoAnterior = ahora;
+
+
+	          //COMPROBAR NOMBRE FUNCION SOFIA
+	          //si, con la funcion de sofia, se ha pulsado el boton de reset, HOMING
+	          //comprobar valor sofia
+	          if (Leer_Boton_Reset()==1){
+	              Homing();
+	          }
+
+
+	          // Coordenadas que nos da maria de la cinemática COMPROBAR FUNCION y que ella ha creado una restuctura llamada ResultadosCinematica con los resultados del J1, J2, y Z
+	           ResultadosCinematica objetivos = obtenerAngulos();
+
+	          //Lectura de los sensores de los motores para las positicones actuales
+
+
+	          //COMPROBAR NOMBRE FUNCION SOFIA
+	           float pasosJ1 = Leer_Pasos_Encoder(1);
+	           float pasosJ2 = Leer_Pasos_Encoder(2);
+	           float pasosZ = Leer_Pasos_Encoder(3);
+
+	           float realJ1=pasosJ1*(360.0f/3960.0f);
+	           float realJ2=pasosJ2*(360.0f/3960.0f);
+	           float realZ=pasosZ*(360.0f/3960.0f);
+
+
+
+	          //Actualizacion de los 3 motores
+
+	         Update_Motor_Axis(&pidJ1, realJ1, objetivos.j1, dt, &htim1, TIM_CHANNEL_1, GPIOE, GPIO_PIN_7, GPIO_PIN_8);
+	         Update_Motor_Axis(&pidJ2, realJ2, objetivos.j2, dt, &htim1, TIM_CHANNEL_2, GPIOE, GPIO_PIN_10, GPIO_PIN_12);
+	         Update_Motor_Axis(&pidZ, realZ, objetivos.z, dt, &htim1, TIM_CHANNEL_3, GPIOE, GPIO_PIN_14, GPIO_PIN_15);
+
+
+
+	          static uint32_t tiempoDebug = 0;  //variable local que dura durante todas las iteraciones gracias a statil
+
+	          //bucle if para comprobar si han pasado 100ms desde el ultimo envio de datos, y si ya han pasado enviar datos a la funcion
+	          if ((ahora - tiempoDebug) >= 100) {
+	              tiempoDebug = ahora; //resetear cronometro para volver a contar hasta 100ms y enviar datos
+	              //mandarr datos a la funcion para imprimir
+	              Interfaz_enviar(
+	                              realJ1, objetivos.j1, PID_GetVoltaje(&pidJ1),
+	                              realJ2, objetivos.j2,  PID_GetVoltaje(&pidJ2),
+	                              realZ, objetivos.z,  PID_GetVoltaje(&pidZ)
+	                          );
+
 	  // Leemos los botones usando tu función del archivo hri
 	  int accion = Leer_Botones_Accion();
 	  int reset = Leer_Boton_Reset();
