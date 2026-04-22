@@ -1,11 +1,19 @@
+/* gripper.h */
 #ifndef GRIPPER_H
 #define GRIPPER_H
 
-#include <stdint.h>
+#include "stm32f4xx_hal.h"
+/* gripper.h */
+#define SERVO_STOP      1500
+#define SERVO_RUN       1750
+#define GIRO_120_MS      300   // ← cambia este valor
+#define HALL_TIMEOUT_MS 2000   // lo dejamos por seguridad
 
-void  Gripper_Init(void);
-char* Gripper_GetColorActual(void);
-char* Gripper_SiguienteColor(void);
-void Gripper_Reset(void);
+extern TIM_HandleTypeDef htim5;
 
-#endif // GRIPPER_H
+void Gripper_Init(void);
+void Gripper_MoveNext(void);
+void Gripper_HallDetected(void);
+void Gripper_Update(void);
+
+#endif

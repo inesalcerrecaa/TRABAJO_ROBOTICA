@@ -59,12 +59,8 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define SENSOR_Hall_Pin GPIO_PIN_1
-#define SENSOR_Hall_GPIO_Port GPIOC
-#define SENSOR_Hall_EXTI_IRQn EXTI1_IRQn
 #define BTN_COLOR_Pin GPIO_PIN_2
 #define BTN_COLOR_GPIO_Port GPIOC
-#define BTN_COLOR_EXTI_IRQn EXTI2_IRQn
 #define BTN_LINEA_Pin GPIO_PIN_3
 #define BTN_LINEA_GPIO_Port GPIOC
 #define BTN_LINEA_EXTI_IRQn EXTI3_IRQn

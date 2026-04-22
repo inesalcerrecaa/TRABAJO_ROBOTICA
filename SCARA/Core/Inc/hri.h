@@ -1,11 +1,9 @@
-#ifndef INC_HRI_H_
-#define INC_HRI_H_
+/* hri.h */
+#ifndef HRI_H // EVITA DOBLE INCLUSIÓN
+#define HRI_H // DEFINE IDENTIFICADOR
 
-#include "main.h"
+#include "stm32f4xx_hal.h" // LIBRERÍA BASE HAL
 
-void LCD_Init(void);
-void Display_LCD_Escribir(uint8_t fila, uint8_t col, char *texto);
-int  Leer_Botones_Accion(void);
-int  Leer_Boton_Reset(void);
+void HRI_Update(void); // PROTOTIPO REFRESCO HRI
 
-#endif
+#endif /* HRI_H */ // FIN DE GUARDAS
