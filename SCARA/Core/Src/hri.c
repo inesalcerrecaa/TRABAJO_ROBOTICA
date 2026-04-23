@@ -144,9 +144,3 @@ int Leer_Boton_Reset(void)
 	return 0;
 }
 
-int Leer_Sensor_Hall(void){
-	if (HAL_GPIO_ReadPin(GPIOC, SENSOR_Hall_Pin) == GPIO_PIN_SET){
-		return 1;
-	}
-	return 0;
-}

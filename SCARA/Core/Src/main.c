@@ -551,10 +551,17 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOE, GIRO_BR1_In1_Pin|GIRO_BR1_In2_Pin|GIRO_BR2_In2_Pin|GIRO_BA_In1_Pin
                           |GIRO_BA_In2_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : SENSOR_Hall_Pin BTN_COLOR_Pin BTN_LINEA_Pin BTN_CIRCULO_Pin
-                           BTN_RESET_Pin */
-  GPIO_InitStruct.Pin = SENSOR_Hall_Pin|BTN_COLOR_Pin|BTN_LINEA_Pin|BTN_CIRCULO_Pin
-                          |BTN_RESET_Pin;
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : BTN_COLOR_Pin */
+  GPIO_InitStruct.Pin = BTN_COLOR_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(BTN_COLOR_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : BTN_LINEA_Pin BTN_CIRCULO_Pin BTN_RESET_Pin */
+  GPIO_InitStruct.Pin = BTN_LINEA_Pin|BTN_CIRCULO_Pin|BTN_RESET_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
@@ -574,13 +581,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GIRO_BR2_In1_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : PD15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
-
-  HAL_NVIC_SetPriority(EXTI2_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI2_IRQn);
-
   HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI3_IRQn);
 
