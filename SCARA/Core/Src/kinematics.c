@@ -6,7 +6,7 @@
  */
 
 /* USER CODE BEGIN Includes */
-#include "kinematics.h"
+#include <stdlib.h>
 #include <math.h>      /* sqrtf, atan2f, acosf — usa versiones float */
 #include "kinematics.h"
 #include "motion.h"
