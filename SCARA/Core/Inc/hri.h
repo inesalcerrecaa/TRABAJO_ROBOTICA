@@ -1,20 +1,16 @@
-/*
- * hri.h
- *
- *  Created on: 21 abr 2026
- *      Author: Tester
- */
-
-#ifndef INC_HRI_H_
-#define INC_HRI_H_
+/* hri.h */
+#ifndef HRI_H // EVITA DOBLE INCLUSIÓN
+#define HRI_H // DEFINE IDENTIFICADOR
 
 #pragma once
-#include "main.h"
+#include "stm32f4xx_hal.h" // LIBRERÍA BASE HAL
 
+void HRI_Update(void); // PROTOTIPO REFRESCO HRI
+void HRI_Init(void);
+
+//prototipo funcion imprimir por pantalla
 void Interfaz_enviar(float realJ1, float objetivoJ1, float voltajeJ1,
     float realJ2, float objetivoJ2, float voltajeJ2,
     float realZ, float objetivoZ, float voltajeZ);
 
-//CORREGIDO
-
-#endif /* INC_HRI_H_ */
+#endif /* HRI_H */ // FIN DE GUARDAS

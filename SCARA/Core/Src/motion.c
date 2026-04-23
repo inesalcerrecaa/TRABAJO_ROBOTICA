@@ -1,6 +1,5 @@
-#include "motion.h"
+#include "motion.h" //incluir cabecera para los prototipos de funciones
 #include <math.h>   // Para usar fabsf() para valor abs
-
 
 //Declaramos variables externas
 extern TIM_HandleTypeDef htim1;

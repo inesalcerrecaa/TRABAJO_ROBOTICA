@@ -21,12 +21,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "hri.h"
-#include "main.h"
-#include "kinematics.h" // El trabajo de María
-#include"motion.h"
-#include"hri.h"  //para Leer_boton_start
-
+#include "hri.h" // GESTIÓN DE PANTALLA Y BOTONES
+#include "gripper.h" // CONTROL DEL SERVO Y SENSOR HALL
+#include "motion.h"
+#include "kinematics.h"
 
 /* USER CODE END Includes */
 
@@ -74,11 +72,6 @@ extern volatile float objetivo_z;
 
 
 
-
-
-// Array con los nombres de los colores (asegúrate de que ocupen espacios para limpiar la pantalla)
-char* lista_colores[4] = {"ROJO   ", "AZUL   ", "VERDE  "};
-int color_actual = 0; // Empezamos en el primer color (0 = ROJO)
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -93,11 +86,8 @@ static void MX_TIM4_Init(void);
 static void MX_TIM5_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
-void LCD_Init(void);
-void Display_LCD_Escribir(uint8_t fila, uint8_t col, char *texto);
-int Leer_Botones_Accion(void);
+int Leer_Botones_Accion(void);  //prototipos de funciones necesarias ??
 int Leer_Boton_Reset(void);
-int Leer_Sensor_Hall(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -119,7 +109,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+
 
   /* USER CODE BEGIN Init */
 
@@ -144,29 +134,23 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  PID_Init(&pidJ1, 200.0f, 10.0f, 10.0f,  50.0f);  // kp mucho más alto
-  PID_Init(&pidJ2, 150.0f, 10.0f,  5.0f,  50.0f);
-  PID_Init(&pidZ,   50.0f,  5.0f,  2.0f,  30.0f); //z en mm
+  //INICIALIZAR CADA J1,J2 y Z con sus respectivos valores de Kp, Ki, Kd, y umbral
+    PID_Init(&pidJ1, 200.0f, 10.0f, 10.0f,  50.0f);  // kp mucho más alto
+    PID_Init(&pidJ2, 150.0f, 10.0f,  5.0f,  50.0f);
+    PID_Init(&pidZ,   50.0f,  5.0f,  2.0f,  30.0f); //z en mm
 
-  // Arrancar los motores
-     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1); // Enciende la base J1
-     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2); // Enciende la traslacion del eje Z
-     HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3); //Enciente el codo J2
+   // Arrancar los motores
+         HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1); // Enciende la base J1
+         HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2); // Enciende la traslacion del eje Z
+         HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3); //Enciente el codo J2
 
-     Homing();
+	 Homing();
 
-     tiempoAnterior = HAL_GetTick(); // Empezamos a contar el tiempo
+	 tiempoAnterior = HAL_GetTick(); // Empezamos a contar el tiempo
 
 
-  // Arrancamos el motor parado
-    HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_1);
-    __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_1, GRIPPER_STOP);
-
-    // Inicializamos la pantalla y mostramos el estado inicial
-    LCD_Init();
-    Display_LCD_Escribir(0, 0, "SCARA LISTO!    ");
-    Display_LCD_Escribir(1, 0, "COLOR: ");
-    Display_LCD_Escribir(1, 7, lista_colores[color_actual]);
+	  HRI_Init();
+	  Gripper_Init();
 
   /* USER CODE END 2 */
 
@@ -174,124 +158,58 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
 	  //calculo de dt, tiempo que ha pasado desde la ultima iteracion del bucle con respecto a la siguiente
-	          uint32_t ahora = HAL_GetTick();
-	          if ((ahora - tiempoAnterior) < 10) continue;  // espera sin bloquear
-	          float dt = (ahora - tiempoAnterior) / 1000.0f;
-	          tiempoAnterior = ahora;
+	 	          uint32_t ahora = HAL_GetTick();
+	 	          if ((ahora - tiempoAnterior) < 10) continue;  // espera sin bloquear
+	 	          float dt = (ahora - tiempoAnterior) / 1000.0f;
+	 	          tiempoAnterior = ahora;
 
 
 
-	          //si, con la funcion de sofia, se ha pulsado el boton de reset, HOMING
-	          if (Leer_Boton_Reset()==1){
-	              Homing();
-	          }
+	 	          //si, con la funcion de sofia, se ha pulsado el boton de reset, HOMING
+	 	          if (Leer_Boton_Reset()==1){
+	 	              Homing();
+	 	          }
 
 
-	          // Coordenadas que nos da maria de la cinemática COMPROBAR FUNCION y que ella ha creado una restuctura llamada ResultadosCinematica con los resultados del J1, J2, y Z
-	          // ResultadosCinematica objetivos = obtenerAngulos();
-
-	          //Lectura de los sensores de los motores para las positicones actuales
-
-
-	          //Devuelve radianes
-	           float realJ1=(float)Leer_Pasos_Encoder(1) * PASOS_A_RAD;
-	           float realJ2=(float)Leer_Pasos_Encoder(2)*PASOS_A_RAD;
-	           float realZ=(float)Leer_Pasos_Encoder(3) * PASOS_A_MM;
+	 	          //Lectura de los sensores de los motores para las positicones actuales
+	 	          //Devuelve radianes
+	 	           float realJ1=(float)Leer_Pasos_Encoder(1) * PASOS_A_RAD;
+	 	           float realJ2=(float)Leer_Pasos_Encoder(2)*PASOS_A_RAD;
+	 	           float realZ=(float)Leer_Pasos_Encoder(3) * PASOS_A_MM;
 
 
 
-	          //Actualizacion de los 3 motores
+	 	          //Actualizacion de los 3 motores
 
-	         Update_Motor_Axis(&pidJ1, realJ1, objetivos_q1, dt, &htim1, TIM_CHANNEL_1, GPIOE, GPIO_PIN_7, GPIO_PIN_8);
-	         Update_Motor_Axis(&pidJ2, realJ2, objetivos_q3, dt, &htim1, TIM_CHANNEL_2, GPIOE, GPIO_PIN_10, GPIO_PIN_12);
-	         Update_Motor_Axis(&pidZ, realZ, objetivos_z, dt, &htim1, TIM_CHANNEL_3, GPIOE, GPIO_PIN_14, GPIO_PIN_15);
+	 	         Update_Motor_Axis(&pidJ1, realJ1, objetivos_q1, dt, &htim1, TIM_CHANNEL_1, GPIOE, GPIO_PIN_7, GPIO_PIN_8);
+	 	         Update_Motor_Axis(&pidJ2, realJ2, objetivos_q3, dt, &htim1, TIM_CHANNEL_2, GPIOE, GPIO_PIN_10, GPIO_PIN_12);
+	 	         Update_Motor_Axis(&pidZ, realZ, objetivos_z, dt, &htim1, TIM_CHANNEL_3, GPIOE, GPIO_PIN_14, GPIO_PIN_15);
 
 
 
-	          static uint32_t tiempoDebug = 0;  //variable local que dura durante todas las iteraciones gracias a statil
+	 	          static uint32_t tiempoDebug = 0;  //variable local que dura durante todas las iteraciones gracias a statil
 
-	          //bucle if para comprobar si han pasado 100ms desde el ultimo envio de datos, y si ya han pasado enviar datos a la funcion
-	          if ((ahora - tiempoDebug) >= 100) {
-	              tiempoDebug = ahora; //resetear cronometro para volver a contar hasta 100ms y enviar datos
-	              //mandarr datos a la funcion para imprimir
-	              Interfaz_enviar(
-	                              realJ1, objetivos_q1, PID_GetVoltaje(&pidJ1),
-	                              realJ2, objetivos_q3,  PID_GetVoltaje(&pidJ2),
-	                              realZ, objetivos_z,  PID_GetVoltaje(&pidZ)
-	                          );
-	          }
+	 	          //bucle if para comprobar si han pasado 100ms desde el ultimo envio de datos, y si ya han pasado enviar datos a la funcion
+	 	          if ((ahora - tiempoDebug) >= 100) {
+	 	              tiempoDebug = ahora; //resetear cronometro para volver a contar hasta 100ms y enviar datos
+	 	              //mandarr datos a la funcion para imprimir
+	 	              Interfaz_enviar(
+	 	                              realJ1, objetivos_q1, PID_GetVoltaje(&pidJ1),
+	 	                              realJ2, objetivos_q3,  PID_GetVoltaje(&pidJ2),
+	 	                              realZ, objetivos_z,  PID_GetVoltaje(&pidZ)
+	 	                          );
+	 	          }
+	 	         // Un pequeño delay para que el bucle no sature el microcontrolador
+	 	         	  HAL_Delay(10);
 
-	  // Leemos los botones usando tu función del archivo hri
-	  int accion = Leer_Botones_Accion();
-	  int reset = Leer_Boton_Reset();
-
-	  // --- SI PULSAN RESET (Pulsación larga) ---
-	  if (reset == 1) {
-		  Display_LCD_Escribir(0, 0, "SISTEMA RESET   ");
-		  color_actual = 0; // Volvemos al color Rojo por defecto
-		  Display_LCD_Escribir(1, 7, lista_colores[color_actual]);
-
-		  HAL_Delay(1500);
-		  Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
-	  }
-
-	  // --- SI PULSAN BOTONES NORMALES ---
-	  else if (accion != 0) {
-
-		  // Acción 1: BOTÓN DE COLOR
-		  if (accion == 1) {
-			  // Pasamos al siguiente color
-			  color_actual++;
-			  if(color_actual > 2) { // Tienes 3 colores en tu nuevo array (0, 1, 2)
-				  color_actual = 0;
-			  }
-
-			  // Mostramos en pantalla que estamos buscando el color
-			  Display_LCD_Escribir(0, 0, "CAMBIANDO COLOR.");
-			  Display_LCD_Escribir(1, 7, lista_colores[color_actual]);
-
-			  // Damos gas al motor del tambor
-			  __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_1, GRIPPER_SPEED);
-
-			  // RETARDO VITAL: Para que el imán actual salga de la zona del sensor
-			  HAL_Delay(500);
-
-			  // Bucle de espera: Nos quedamos aquí hasta que el sensor detecte el SIGUIENTE imán
-			  while(Leer_Sensor_Hall() == 0)
-			  {
-				  // El micro no hace nada, solo espera al imán mientras el tambor gira
-			  }
-
-			  // ¡Imán detectado! Frenazo en seco
-			  __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_1, GRIPPER_STOP);
-
-			  // Volvemos al estado inicial en la pantalla
-			  Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
-		  }
-
-		  // Acción 2: BOTÓN DE CÍRCULO - Mensaje de aviso
-		  else if (accion == 2) {
-			  Display_LCD_Escribir(0, 0, "MODO PINTAR OFF ");
-			  HAL_Delay(1000);
-			  Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
-		  }
-
-		  // Acción 3: BOTÓN DE LÍNEA - Mensaje de aviso
-		  else if (accion == 3) {
-			  Display_LCD_Escribir(0, 0, "MODO PINTAR OFF ");
-			  HAL_Delay(1000);
-			  Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
-		  }
-	  }
-
-	  // Un pequeño delay para que el bucle no sature el microcontrolador
-	  HAL_Delay(10);
 
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
+	  HRI_Update();
+	  Gripper_Update();    /* gestiona timeout del Hall */
   }
   /* USER CODE END 3 */
 }
