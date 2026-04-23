@@ -170,7 +170,7 @@ int main(void)
 
   /* USER CODE END 2 */
 
-	/* Infinite loop */
+  /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
@@ -289,9 +289,9 @@ int main(void)
 	  // Un pequeño delay para que el bucle no sature el microcontrolador
 	  HAL_Delay(10);
 
-	/* USER CODE END WHILE */
+    /* USER CODE END WHILE */
 
-	/* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
@@ -313,11 +313,12 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_OFF;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 4;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLM = 8;
   RCC_OscInitStruct.PLL.PLLN = 192;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV4;
   RCC_OscInitStruct.PLL.PLLQ = 8;
@@ -614,7 +615,7 @@ static void MX_TIM5_Init(void)
 
   /* USER CODE END TIM5_Init 1 */
   htim5.Instance = TIM5;
-  htim5.Init.Prescaler = 99;
+  htim5.Init.Prescaler = 47;
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim5.Init.Period = 19999;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -716,10 +717,17 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOE, GIRO_BR1_In1_Pin|GIRO_BR1_In2_Pin|GIRO_BR2_In2_Pin|GIRO_BA_In1_Pin
                           |GIRO_BA_In2_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : SENSOR_Hall_Pin BTN_COLOR_Pin BTN_LINEA_Pin BTN_CIRCULO_Pin
-                           BTN_RESET_Pin */
-  GPIO_InitStruct.Pin = SENSOR_Hall_Pin|BTN_COLOR_Pin|BTN_LINEA_Pin|BTN_CIRCULO_Pin
-                          |BTN_RESET_Pin;
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : BTN_COLOR_Pin */
+  GPIO_InitStruct.Pin = BTN_COLOR_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(BTN_COLOR_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : BTN_LINEA_Pin BTN_CIRCULO_Pin BTN_RESET_Pin */
+  GPIO_InitStruct.Pin = BTN_LINEA_Pin|BTN_CIRCULO_Pin|BTN_RESET_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
@@ -739,13 +747,14 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GIRO_BR2_In1_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : PD15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
-
-  HAL_NVIC_SetPriority(EXTI2_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI2_IRQn);
-
   HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI3_IRQn);
 
