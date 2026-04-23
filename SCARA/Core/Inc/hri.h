@@ -1,16 +1,31 @@
 /* hri.h */
-#ifndef HRI_H // EVITA DOBLE INCLUSIÓN
-#define HRI_H // DEFINE IDENTIFICADOR
+#ifndef INC_HRI_H // EVITA DOBLE INCLUSIÓN
+#define INC_HRI_H // DEFINE IDENTIFICADOR
 
 #pragma once
 #include "stm32f4xx_hal.h" // LIBRERÍA BASE HAL
+#include"main.h"
 
-void HRI_Update(void); // PROTOTIPO REFRESCO HRI
+
+//funciones de reseteo
+void HRI_Update(void);
 void HRI_Init(void);
+
+
+//funciones de pantalla
+void LCD_Init(void);
+void Display_LCD_Escribir(uint8_t fila, uint8_t col, char *texto);
+
+//funciones de botones y sensores
+int Leer_Botones_Accion(void);
+int Leer_Boton_Reset(void);
+int Leer_Sensor_Hall(void);
 
 //prototipo funcion imprimir por pantalla
 void Interfaz_enviar(float realJ1, float objetivoJ1, float voltajeJ1,
     float realJ2, float objetivoJ2, float voltajeJ2,
     float realZ, float objetivoZ, float voltajeZ);
 
-#endif /* HRI_H */ // FIN DE GUARDAS
+
+#endif
+
