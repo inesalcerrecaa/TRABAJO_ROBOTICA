@@ -11,6 +11,7 @@
 #include "kinematics.h"
 #include "motion.h"
 #include "gripper.h"
+#include "motion.h"
 /* USER CODE END Includes */
 
 /* USER CODE BEGIN Private Variables */
