@@ -153,8 +153,8 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  // Leemos los botones usando tu función del archivo hri
-	  int accion = Leer_Botones_Accion();
-	  int reset = Leer_Boton_Reset();
+	  //int accion = Leer_Botones_Accion();
+	  //int reset = Leer_Boton_Reset();
 
 	  // --- SI PULSAN RESET (Pulsación larga) ---
 	  if (reset == 1) {
