@@ -182,9 +182,9 @@ int main(void)
 
 	 	          //Actualizacion de los 3 motores
 
-	 	         Update_Motor_Axis(&pidJ1, realJ1, objetivos_q1, dt, &htim1, TIM_CHANNEL_1, GPIOE, GPIO_PIN_7, GPIO_PIN_8);
-	 	         Update_Motor_Axis(&pidJ2, realJ2, objetivos_q3, dt, &htim1, TIM_CHANNEL_2, GPIOE, GPIO_PIN_10, GPIO_PIN_12);
-	 	         Update_Motor_Axis(&pidZ, realZ, objetivos_z, dt, &htim1, TIM_CHANNEL_3, GPIOE, GPIO_PIN_14, GPIO_PIN_15);
+	 	         Update_Motor_Axis(&pidJ1, realJ1, objetivo_q1, dt, &htim1, TIM_CHANNEL_1, GPIOE, GPIO_PIN_7, GPIO_PIN_8);
+	 	         Update_Motor_Axis(&pidJ2, realJ2, objetivo_q3, dt, &htim1, TIM_CHANNEL_2, GPIOE, GPIO_PIN_10, GPIO_PIN_12);
+	 	         Update_Motor_Axis(&pidZ, realZ, _z, dt, &htim1, TIM_CHANNEL_3, GPIOE, GPIO_PIN_14, GPIO_PIN_15);
 
 
 

@@ -1,6 +1,6 @@
 #pragma once
-#ifndef MOTION_H
-#define MOTION_H
+#ifndef INC_MOTION_H
+#define INC_MOTION_H
 
 #include "main.h" // Obligatorio para los tipos de datos de STM32
 
@@ -18,6 +18,12 @@
 extern volatile uint8_t homingJ1_done;
 extern volatile uint8_t homingJ2_done;
 extern volatile uint8_t homingZ_done;
+
+
+//funciones de los encoders
+void Encoders_Init(void);
+int32_t Leer_Pasos_Encoder(int numero_motor);
+
 
 //declaro estructura del PID
 typedef struct {
