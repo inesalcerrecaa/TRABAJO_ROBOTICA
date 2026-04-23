@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "hri.h" // GESTIÓN DE PANTALLA Y BOTONES
+#include "motion.h"
 #include "gripper.h" // CONTROL DEL SERVO Y SENSOR HALL
 #include "kinematics.h"
 /* USER CODE END Includes */
@@ -56,6 +57,12 @@ DMA_HandleTypeDef hdma_usart2_tx;
 
 /* USER CODE BEGIN PV */
 float q4_color_actual = 0.0f;
+#define GRIPPER_STOP  1500
+#define GRIPPER_SPEED 1650
+
+// Array con los nombres de los colores (asegúrate de que ocupen espacios para limpiar la pantalla)
+char* lista_colores[4] = {"ROJO   ", "AZUL   ", "VERDE  "};
+int color_actual = 0; // Empezamos en el primer color (0 = ROJO)
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -70,7 +77,11 @@ static void MX_TIM4_Init(void);
 static void MX_TIM5_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
-
+/*void LCD_Init(void);
+void Display_LCD_Escribir(uint8_t fila, uint8_t col, char *texto);
+int Leer_Botones_Accion(void);
+int Leer_Boton_Reset(void);
+int Leer_Sensor_Hall(void);*/
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -119,6 +130,16 @@ int main(void)
 
   HRI_Init();
   Gripper_Init();
+  Encoders_Init(); //despertamos a mis encoders SOFÍA
+ // Arrancamos el motor parado
+  HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_1);
+  __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_1, GRIPPER_STOP);
+// Inicializamos la pantalla y mostramos el estado inicial
+  LCD_Init();
+  Display_LCD_Escribir(0, 0, "SCARA LISTO!    ");
+  Display_LCD_Escribir(1, 0, "COLOR: ");
+  Display_LCD_Escribir(1, 7, lista_colores[color_actual]);
+
   /* Calcular el q4 que deja el rotulador perpendicular al lienzo            */
    q4_color_actual = IK_Calcular_q4_Perpendicular(LIENZO_CENTRO_X, LIENZO_CENTRO_Y);//CORRECCION A COMPROBAR PORQUE NO TENEMOS EL ANGULO DE COLOR
    IK_Actualizar_Brazo_Efectivo (q4_color_actual);
