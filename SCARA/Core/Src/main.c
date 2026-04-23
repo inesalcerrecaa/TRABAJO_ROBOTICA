@@ -134,11 +134,11 @@ int main(void)
  // Arrancamos el motor parado
   HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_1);
   __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_1, GRIPPER_STOP);
-// Inicializamos la pantalla y mostramos el estado inicial
-  LCD_Init();
-  Display_LCD_Escribir(0, 0, "SCARA LISTO!    ");
-  Display_LCD_Escribir(1, 0, "COLOR: ");
-  Display_LCD_Escribir(1, 7, lista_colores[color_actual]);
+// Inicializamos la pantalla y mostramos el estado inicial. LO HE COMENTADO PORQUE ME DA ERROR Y NO ENCUENTRO DONDE ESTA EL CODIGO DE LA LCD
+ // LCD_Init();
+ // Display_LCD_Escribir(0, 0, "SCARA LISTO!    ");
+ // Display_LCD_Escribir(1, 0, "COLOR: ");
+ // Display_LCD_Escribir(1, 7, lista_colores[color_actual]);
 
   /* Calcular el q4 que deja el rotulador perpendicular al lienzo            */
    q4_color_actual = IK_Calcular_q4_Perpendicular(LIENZO_CENTRO_X, LIENZO_CENTRO_Y);//CORRECCION A COMPROBAR PORQUE NO TENEMOS EL ANGULO DE COLOR
@@ -152,9 +152,77 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  // Leemos los botones usando tu función del archivo hri
+	  int accion = Leer_Botones_Accion();
+	  int reset = Leer_Boton_Reset();
 
+	  // --- SI PULSAN RESET (Pulsación larga) ---
+	  if (reset == 1) {
+		  Display_LCD_Escribir(0, 0, "SISTEMA RESET   ");
+		  color_actual = 0; // Volvemos al color Rojo por defecto
+		  Display_LCD_Escribir(1, 7, lista_colores[color_actual]);
+
+		  HAL_Delay(1500);
+		  Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
+	  }
+
+	  // --- SI PULSAN BOTONES NORMALES ---
+	  else if (accion != 0) {
+
+		  // Acción 1: BOTÓN DE COLOR
+		  if (accion == 1) {
+			  // Pasamos al siguiente color
+			  color_actual++;
+			  if(color_actual > 2) { // Tienes 3 colores en tu nuevo array (0, 1, 2)
+				  color_actual = 0;
+			  }
+
+			  // Mostramos en pantalla que estamos buscando el color
+			  Display_LCD_Escribir(0, 0, "CAMBIANDO COLOR.");
+			  Display_LCD_Escribir(1, 7, lista_colores[color_actual]);
+
+			  // Damos gas al motor del tambor
+			  __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_1, GRIPPER_SPEED);
+
+			  // RETARDO VITAL: Para que el imán actual salga de la zona del sensor
+			  HAL_Delay(500);
+
+			  // Bucle de espera: Nos quedamos aquí hasta que el sensor detecte el SIGUIENTE imán
+			  /*while(Leer_Sensor_Hall() == 0)
+			  {
+				  // El micro no hace nada, solo espera al imán mientras el tambor gira
+			  }*/
+
+			  // ¡Imán detectado! Frenazo en seco
+			 // __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_1, GRIPPER_STOP);
+
+			  // Volvemos al estado inicial en la pantalla
+			  Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
+		  }
+
+		  // Acción 2: BOTÓN DE CÍRCULO - Mensaje de aviso
+		  else if (accion == 2) {
+			  Display_LCD_Escribir(0, 0, "TRAZANDO CIRCULO ");
+			  HAL_Delay(1000);
+			  Dibujar_Circulo_Aleatorio(); //llamamos a la funcion
+			  Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
+		  }
+
+		  // Acción 3: BOTÓN DE LÍNEA - Mensaje de aviso
+		  else if (accion == 3) {
+			  Display_LCD_Escribir(0, 0, "DIBUJANDO LINEA ");
+			  HAL_Delay(1000);
+			  Dibujar_Linea_Aleatoria(); //llamamos a la funcion
+			  Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
+		  }
+	  }
+
+	  // Un pequeño delay para que el bucle no sature el microcontrolador
+	  HAL_Delay(10);
 	  HRI_Update();
 	  Gripper_Update();    /* gestiona timeout del Hall */
+
+
   }
   /* USER CODE END 3 */
 }
