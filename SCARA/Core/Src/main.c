@@ -181,13 +181,13 @@ int main(void)
 			  HAL_Delay(500);
 
 			  // Bucle de espera: Nos quedamos aquí hasta que el sensor detecte el SIGUIENTE imán
-			  while(Leer_Sensor_Hall() == 0)
+			  /*while(Leer_Sensor_Hall() == 0)
 			  {
 				  // El micro no hace nada, solo espera al imán mientras el tambor gira
-			  }
+			  }*/
 
 			  // ¡Imán detectado! Frenazo en seco
-			  __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_1, GRIPPER_STOP);
+			 // __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_1, GRIPPER_STOP);
 
 			  // Volvemos al estado inicial en la pantalla
 			  Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
@@ -195,7 +195,7 @@ int main(void)
 
 		  // Acción 2: BOTÓN DE CÍRCULO - Mensaje de aviso
 		  else if (accion == 2) {
-			  Display_LCD_Escribir(0, 0, "DIBUJANDO CIRCULO ");
+			  Display_LCD_Escribir(0, 0, "TRAZANDO CIRCULO ");
 			  HAL_Delay(1000);
 			  Dibujar_Circulo_Aleatorio(); //llamamos a la funcion
 			  Display_LCD_Escribir(0, 0, "ROBOT LISTO     ");
