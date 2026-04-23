@@ -184,7 +184,7 @@ int main(void)
 
 	 	         Update_Motor_Axis(&pidJ1, realJ1, objetivo_q1, dt, &htim1, TIM_CHANNEL_1, GPIOE, GPIO_PIN_7, GPIO_PIN_8);
 	 	         Update_Motor_Axis(&pidJ2, realJ2, objetivo_q3, dt, &htim1, TIM_CHANNEL_2, GPIOE, GPIO_PIN_10, GPIO_PIN_12);
-	 	         Update_Motor_Axis(&pidZ, realZ, _z, dt, &htim1, TIM_CHANNEL_3, GPIOE, GPIO_PIN_14, GPIO_PIN_15);
+	 	         Update_Motor_Axis(&pidZ, realZ, objetivo_z, dt, &htim1, TIM_CHANNEL_3, GPIOE, GPIO_PIN_14, GPIO_PIN_15);
 
 
 
@@ -195,9 +195,9 @@ int main(void)
 	 	              tiempoDebug = ahora; //resetear cronometro para volver a contar hasta 100ms y enviar datos
 	 	              //mandarr datos a la funcion para imprimir
 	 	              Interfaz_enviar(
-	 	                              realJ1, objetivos_q1, PID_GetVoltaje(&pidJ1),
-	 	                              realJ2, objetivos_q3,  PID_GetVoltaje(&pidJ2),
-	 	                              realZ, objetivos_z,  PID_GetVoltaje(&pidZ)
+	 	                              realJ1, objetivo_q1, PID_GetVoltaje(&pidJ1),
+	 	                              realJ2, objetivo_q3,  PID_GetVoltaje(&pidJ2),
+	 	                              realZ, objetivo_z,  PID_GetVoltaje(&pidZ)
 	 	                          );
 	 	          }
 	 	         // Un pequeño delay para que el bucle no sature el microcontrolador
