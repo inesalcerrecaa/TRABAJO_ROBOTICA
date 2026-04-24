@@ -14,7 +14,7 @@ extern TIM_HandleTypeDef htim5; // INSTANCIA TIMER EXTERNO
 
 void Gripper_Init(void);        // INICIALIZA PWM
 void Gripper_MoveNext(void);    // INICIA MOVIMIENTO
-void Gripper_HallDetected(void); // DETECCIÓN POR IMÁN
+//void Gripper_HallDetected(void); // DETECCIÓN POR IMÁN
 void Gripper_Update(void);      // CONTROL POR TIEMPO
 
 #endif // FIN DE CABECERA

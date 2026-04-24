@@ -11,26 +11,29 @@
 #include "kinematics.h"
 #include "motion.h"
 #include "gripper.h"
-#include "motion.h"
 /* USER CODE END Includes */
 
 /* USER CODE BEGIN Private Variables */
 /* Variables internas del brazo efectivo (se calculan con IK_Update_Effective_Arm) */
 static float s_L_eff = L2 + L_xy;  /* Valor inicial con q4=0 */
 static float s_alpha  = 0.0f;
-volatile float objetivo_q1=0.0f;
-volatile float objetivo_q3=0.0f;
-volatile float objetivo_z=0.0f;
+/* Variables globales que Alba puede leer para su PID:
+   volatile porque se escriben desde trayectorias y se leen desde control */
+volatile float objetivo_q1 = 0.0f;
+volatile float objetivo_q3 = 0.0f;
+volatile float objetivo_z  = 0.0f;
 /* USER CODE END Private Variables */
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define LIENZO_X_MAX 300
 #define LIENZO_Y_MAX 400
-#define PI 3.14159265
+#define PI 3.14159265f
 /* USER CODE END PD */
 
 /*USER CODE BEGIN 0*/
-void Mover_Eje_Z (int altura_mm);
+void Mover_Eje_Z (int altura_mm){
+	(void)altura_mm;
+}
 
 //Funciones fantasma, cuando Maria y Alba termineis, conectareis vuestro codigo aqui dentro
 void Mover_Robot_A_Coordenada (int x, int y){
@@ -40,12 +43,12 @@ void Mover_Robot_A_Coordenada (int x, int y){
 	    // La Z que necesita la IK se obtiene directamente de la coordenada Y del lienzo.
 	    float z_mm = (float)y;
 
-	    //IK_Result_t ik = IK_Resolver_Movimiento((float)x, (float)y, z_mm);
+	    IK_Result_t ik = IK_Resolver_Movimiento((float)x, (float)y, z_mm);
 
-	    //if (!ik.valid) {
+	    if (!ik.valid) {
 	        // Punto fuera de rango: no mover, esperar siguiente frame
 	        return;
-	   // }
+	    }
 
 	    // --- BLOQUE DE ALBA: PID y motores ---
 	    // Alba rellena estas funciones en pid_core.c y pwm_motors.c
@@ -127,20 +130,22 @@ void Dibujar_Circulo_Aleatorio(void){
 	float angulo_paso = (2*PI) / puntos_resolucion; //convierto los pasos a radianes
 
 	//Calculo el punto 0 para empezar a trazar
-	int primer_x = centro_x + (radio_dibujo * cos(0));
-	int primer_y = centro_y + (radio_dibujo * sin(0));
+	int primer_x = centro_x + (int) (radio_dibujo * cos(0.0f));
+	int primer_y = centro_y + (int) (radio_dibujo * sin(0.0f));
 
 	//Vamos al borde derecho del círculo para empezar a dibujar
-	Mover_Robot_A_Coordenada(centro_x + radio_dibujo, centro_y);
-	Bajar_Rotulador(centro_y);
+	//Mover_Robot_A_Coordenada(centro_x + radio_dibujo, centro_y);
+	Mover_Robot_A_Coordenada(primer_x, primer_y);
+	//Bajar_Rotulador(centro_y);
+	Bajar_Rotulador(primer_y);
 
 	//Bucle de interpolación
 	for (int i = 1; i <= puntos_resolucion; i++){
 		float angulo_actual = i * angulo_paso;
 
 		//fórmulas trigonometricas
-		int punto_x = centro_x + (radio_dibujo * cos(angulo_actual));
-		int punto_y = centro_y + (radio_dibujo * sin(angulo_actual));
+		int punto_x = centro_x + (int) (radio_dibujo * cos(angulo_actual));
+		int punto_y = centro_y + (int) (radio_dibujo * sin(angulo_actual));
 
 		//le mandamos la orden al cerebro del robot
 		Mover_Robot_A_Coordenada(punto_x, punto_y);
