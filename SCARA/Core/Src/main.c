@@ -86,9 +86,10 @@ static void MX_TIM4_Init(void);
 static void MX_TIM5_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
-int Leer_Botones_Accion(void);  //prototipos de funciones necesarias ??
-int Leer_Boton_Reset(void);
+//int Leer_Botones_Accion(void);  //prototipos de funciones necesarias ??
+//int Leer_Boton_Reset(void);
 /* USER CODE END PFP */
+
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
