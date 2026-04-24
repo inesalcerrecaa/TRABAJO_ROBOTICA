@@ -84,6 +84,8 @@ void Display_LCD_Escribir(uint8_t fila, uint8_t col, char *texto) {
 
 
 //FUNCIONES DE BOTONES Y SENSORES
+
+/*
 static uint32_t btn1_start_time = 0;
 static uint8_t  btn1_is_pressed = 0;
 
@@ -169,7 +171,7 @@ int Leer_Boton_Reset(void)
 		}
 	}
 	return 0;
-}
+}*/
 
 
 void HRI_Update(void) // REFRESCAR ENTRADAS
