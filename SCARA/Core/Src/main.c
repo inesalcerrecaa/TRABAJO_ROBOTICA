@@ -35,7 +35,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define LIENZO_CENTRO_X 150.0f
+#define LIENZO_CENTRO_Y 0.0f
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -56,6 +57,7 @@ UART_HandleTypeDef huart2;
 DMA_HandleTypeDef hdma_usart2_tx;
 
 /* USER CODE BEGIN PV */
+float q4_color_actual = 0.0f;
 #define GRIPPER_STOP  1500
 #define GRIPPER_SPEED 1650
 
@@ -152,6 +154,11 @@ int main(void)
 
 	  HRI_Init();
 	  Gripper_Init();
+	  Encoders_Init();
+
+  /* Calcular el q4 que deja el rotulador perpendicular al lienzo*/
+	 q4_color_actual = IK_Calcular_q4_Perpendicular(LIENZO_CENTRO_X, LIENZO_CENTRO_Y);//CORRECCION A COMPROBAR PORQUE NO TENEMOS EL ANGULO DE COLOR
+	 IK_Actualizar_Brazo_Efectivo (q4_color_actual);
 
   /* USER CODE END 2 */
 

@@ -2,6 +2,7 @@
 #include"main.h"  //necesario para la stm32
 #include "hri.h"        // CABECERA DE INTERFAZ
 #include "gripper.h"    // MÓDULO DEL ACTUADOR
+#include "kinematics.h"  //NECESARIO PARA LAS FUNCIONES DE DIBUJAR
 #include <stdio.h>  //para printf
 #include <string.h>
 
@@ -12,7 +13,84 @@
 extern I2C_HandleTypeDef hi2c1;  //declarar variable externa para lcd
 extern UART_HandleTypeDef huart2; //declaro variable externa para huart2
 static uint32_t last_press_ms = 0;           // MARCA DE TIEMPO ANTERIOR
-static uint8_t  last_state    = GPIO_PIN_SET; // ESTADO PREVIO PULL-UP
+
+
+//ESTADOS PREVIOS DE LOS 4 BOTONES
+static uint8_t last_state_color   = GPIO_PIN_SET;   // PC2 (Pull-up)
+static uint8_t last_state_linea   = GPIO_PIN_RESET; // PC3
+static uint8_t last_state_circulo = GPIO_PIN_RESET; // PC4
+static uint8_t last_state_reset   = GPIO_PIN_RESET; // PC5
+
+
+void HRI_Update(void) // REFRESCAR ENTRADAS
+{
+	//MOVER GRIPPER (FUNCIONA YA)
+    uint8_t current_state = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_2); // LEE PIN PC2
+
+    /* Flanco de bajada + anti-rebote */
+    if ((current_state == GPIO_PIN_RESET) && // DETECTA PULSACIÓN
+        (last_state_color    == GPIO_PIN_SET))
+    {
+        last_press_ms = HAL_GetTick(); // RESETEA TEMPORIZADOR
+        Gripper_MoveNext();            // MUEVE EL GRIPPER
+    }
+
+    last_state_color = current_state; // ACTUALIZA MEMORIA ESTADO
+
+    //BOTON LINEA
+    uint8_t current_linea = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_3); // LEE PIN PC3
+
+        /* Flanco de bajada + anti-rebote */
+        if ((current_linea == GPIO_PIN_SET) && // DETECTA PULSACIÓN
+            (last_state_linea == GPIO_PIN_RESET))
+        {
+            last_press_ms = HAL_GetTick(); // RESETEA TEMPORIZADOR
+            Dibujar_Linea_Aleatoria();            // MUEVE EL GRIPPER
+        }
+
+        last_state_linea = current_linea; // ACTUALIZA MEMORIA ESTADO
+
+    // BOTON CIRCULO
+        uint8_t current_circulo = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_4); // LEE PIN PC4
+
+            /* Flanco de bajada + anti-rebote */
+            if ((current_circulo == GPIO_PIN_SET) && // DETECTA PULSACIÓN
+                (last_state_circulo == GPIO_PIN_RESET))
+            {
+                last_press_ms = HAL_GetTick(); // RESETEA TEMPORIZADOR
+                Dibujar_Circulo_Aleatorio();            // MUEVE EL GRIPPER
+            }
+
+            last_state_circulo = current_circulo; // ACTUALIZA MEMORIA ESTADO
+
+    //BOTON RESET
+            uint8_t current_reset = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_5); // LEE PIN PC5
+
+                /* Flanco de bajada + anti-rebote */
+                if ((current_reset == GPIO_PIN_SET) && // DETECTA PULSACIÓN
+                    (last_state_reset == GPIO_PIN_RESET))
+                {
+                    last_press_ms = HAL_GetTick(); // RESETEA TEMPORIZADOR
+                    Gripper_Init();            // MUEVE EL GRIPPER
+                }
+
+                last_state_reset = current_reset; // ACTUALIZA MEMORIA ESTADO
+}
+void HRI_Init(void) {
+	// Inicializa variables leyendo el estado real al arrancar
+	    last_state_color   = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_2);
+	    last_state_linea   = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_3);
+	    last_state_circulo = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_4);
+	    last_state_reset   = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_5);
+}
+
+//FUNCION que devuelve 1 si esta pulsado el boton de reset
+int Leer_Boton_Reset(void) {
+    if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_5) == GPIO_PIN_SET) {
+        return 1;
+    }
+    return 0;
+}
 
 //FUNCION SALIDA POR PANTALLA
 void Interfaz_enviar(float realJ1, float objetivoJ1, float voltajeJ1,
@@ -83,112 +161,4 @@ void Display_LCD_Escribir(uint8_t fila, uint8_t col, char *texto) {
 }
 
 
-//FUNCIONES DE BOTONES Y SENSORES
 
-/*
-static uint32_t btn1_start_time = 0;
-static uint8_t  btn1_is_pressed = 0;
-
-static uint32_t btn2_start_time = 0;
-static uint8_t  btn2_is_pressed = 0;
-
-static uint32_t btn3_start_time = 0;
-static uint8_t  btn3_is_pressed = 0;
-
-static uint32_t reset_start_time = 0;
-static uint8_t  reset_is_pressed = 0;
-
-#define DEBOUNCE_MS     50
-#define TIEMPO_RESET_MS 2000
-
-int Leer_Botones_Accion(void)
-{
-	uint32_t ahora = HAL_GetTick();
-
-	// BOTÓN 1: Girar Gripper (PC2)
-	GPIO_PinState estado_btn1 = HAL_GPIO_ReadPin(GPIOC, BTN_COLOR_Pin);
-	if (estado_btn1 == GPIO_PIN_SET) {
-		if (!btn1_is_pressed) {
-			btn1_is_pressed = 1;
-			btn1_start_time = ahora;
-		}
-	} else {
-		if (btn1_is_pressed){
-			uint32_t duracion = ahora - btn1_start_time;
-			btn1_is_pressed = 0;
-			if (duracion >= DEBOUNCE_MS) return 1;
-		}
-	}
-
-	// BOTÓN 2: Dibujar Círculo (PC4)
-    GPIO_PinState estado_btn2 = HAL_GPIO_ReadPin(GPIOC, BTN_CIRCULO_Pin);
-    if (estado_btn2 == GPIO_PIN_SET) {
-        if (!btn2_is_pressed) {
-            btn2_is_pressed = 1;
-            btn2_start_time = ahora;
-        }
-    } else {
-        if (btn2_is_pressed){
-            uint32_t duracion = ahora - btn2_start_time;
-            btn2_is_pressed = 0;
-            if (duracion >= DEBOUNCE_MS) return 2;
-        }
-    }
-
-	// BOTÓN 3: Dibujar Línea (PC3)
-    GPIO_PinState estado_btn3 = HAL_GPIO_ReadPin(GPIOC, BTN_LINEA_Pin);
-    if (estado_btn3 == GPIO_PIN_SET) {
-        if (!btn3_is_pressed) {
-            btn3_is_pressed = 1;
-            btn3_start_time = ahora;
-        }
-    } else {
-        if (btn3_is_pressed){
-            uint32_t duracion = ahora - btn3_start_time;
-            btn3_is_pressed = 0;
-            if (duracion >= DEBOUNCE_MS) return 3;
-        }
-    }
-
-	return 0;
-}
-
-int Leer_Boton_Reset(void)
-{
-	uint32_t ahora = HAL_GetTick();
-	GPIO_PinState estado_reset = HAL_GPIO_ReadPin(GPIOC, BTN_RESET_Pin);
-
-	if (estado_reset == GPIO_PIN_SET){
-		if (!reset_is_pressed){
-			reset_is_pressed = 1;
-			reset_start_time = ahora;
-		}
-	}else {
-		if (reset_is_pressed){
-			uint32_t duracion = ahora - reset_start_time;
-			reset_is_pressed = 0;
-			if (duracion >= TIEMPO_RESET_MS) return 1;
-		}
-	}
-	return 0;
-}*/
-
-
-void HRI_Update(void) // REFRESCAR ENTRADAS
-{
-    uint8_t current_state = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_2); // LEE PIN PC2
-
-    /* Flanco de bajada + anti-rebote */
-    if ((current_state == GPIO_PIN_RESET) && // DETECTA PULSACIÓN
-        (last_state    == GPIO_PIN_SET))
-    {
-        last_press_ms = HAL_GetTick(); // RESETEA TEMPORIZADOR
-        Gripper_MoveNext();            // MUEVE EL GRIPPER
-    }
-
-    last_state = current_state; // ACTUALIZA MEMORIA ESTADO
-}
-void HRI_Init(void) {
-    // Puedes dejarla vacía por ahora o usarla para
-    // inicializar variables de estado de los botones.
-}
